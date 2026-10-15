@@ -1,0 +1,60 @@
+{
+  "_comment": "可拆卸 LUT 下载包目录。内置 8 个精选 LUT 不打包在此；这些包按需下载、可删除，保证 app 轻量。下载源社区公认、高 star 优先（star 原则 2026-10-15）。客户端下载后经 CustomImportManager.importLut 转内部 .plut v4 并进入 LutManager 注册表，与 B1 的 LUT 面板数据驱动渲染打通。",
+  "_source_config": {
+    "_comment": "远端目录可配置：若 remoteCatalogUrl 非空，App 启动时拉取它覆盖本文件，便于不发版更新下载源。留空则只用本内置目录。",
+    "remoteCatalogUrl": "",
+    "downloadDir": "downloaded_luts"
+  },
+  "packs": [
+    {
+      "id": "pack_t3mujin_fujifilm",
+      "name": { "en": "t3mujin Fujifilm Simulations", "zh": "t3mujin 富士模拟" },
+      "sourceUrl": "https://github.com/t3mujin/t3mujinpack",
+      "license": "GPL-3.0 / 见仓库",
+      "star": "高（社区公认 Darktable 胶片模拟包）",
+      "contents": "富士 Classic/Neg/Pro/Velvia/Astia 等胶片模拟，.xmp（可转 .cube/.plut）",
+      "fileUrl": "",
+      "format": "xmp_bundle"
+    },
+    {
+      "id": "pack_cedeber_haldclut",
+      "name": { "en": "HaldCLUT Film Emulations", "zh": "HaldCLUT 胶片模拟" },
+      "sourceUrl": "https://github.com/cedeber/hald-clut",
+      "license": "MIT",
+      "star": 320,
+      "contents": "5 套胶片 HaldCLUT（Kodak/富士/Agfa），可转为 .cube",
+      "fileUrl": "",
+      "format": "haldclut"
+    },
+    {
+      "id": "pack_gmic_colour",
+      "name": { "en": "G'MIC Colour LUTs", "zh": "G'MIC 颜色预设" },
+      "sourceUrl": "https://gmic.eu/gallery.shtml",
+      "license": "GPL（G'MIC）",
+      "star": "高（1100+ CLUT，社区广泛使用）",
+      "contents": "1100+ 颜色/胶片 CLUT（.cube / HaldCLUT），免费",
+      "fileUrl": "",
+      "format": "cube_bundle"
+    },
+    {
+      "id": "pack_art_spektrafilm",
+      "name": { "en": "ART Spektrafilm LUTs", "zh": "ART Spektrafilm 富士/柯达" },
+      "sourceUrl": "https://bitbucket.org/agriggio/art/wiki/",
+      "license": "GPL-3.0",
+      "star": "高（artraweditor/ART，专业 RAW 工作流）",
+      "contents": "spektrafilm 富士/柯达胶片 LUT，.cube",
+      "fileUrl": "",
+      "format": "cube_bundle"
+    },
+    {
+      "id": "pack_rni_free",
+      "name": { "en": "RNI Films Free Presets", "zh": "RNI 免费胶片预设" },
+      "sourceUrl": "https://www.rnifilms.com/",
+      "license": "免费预设（见官网条款）",
+      "star": "高（专业胶片模拟标杆）",
+      "contents": "RNI Films 免费版胶片预设（Portra/Gold/Ektar/Ilford 等）",
+      "fileUrl": "",
+      "format": "cube_bundle"
+    }
+  ]
+}
