@@ -1,0 +1,26 @@
+*.iml
+.gradle
+.kotlin
+/local.properties
+.idea
+.DS_Store
+build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+app/*/release
+# app/release.jks 是刻意提交的固定签名密钥（alias: foweh），不要加入忽略列表，
+# 否则不同环境构建出的 APK 签名会不一致、无法覆盖安装。
+.gradle-home
+/MGC
+/AGC
+/agc-photon-lut
+/third_party
+__pycache__
+/scripts/research/*
+/docs/research/*
+.codex-tmp
+.tmp
+/research/*
+/scripts/lut_training/runs
