@@ -1472,10 +1472,10 @@ fun CameraScreen(
                         if (activePanel == ActivePanel.NONE) {
                             ComputationalSceneBar(
                                 scene = computationalScene,
-                                onSceneSelected = viewModel::setComputationalScene,
+                                onSceneSelected = viewModel::selectComputationalScene,
                                 isVideoMode = isVideoMode,
                                 rawVideoEnabled = viewModel.rawVideoMode,
-                                onRawVideoToggle = viewModel::setRawVideoMode,
+                                onRawVideoToggle = viewModel::updateRawVideoMode,
                                 starTrailsEnabled = starTrailsEnabled,
                                 onStarTrailsToggle = { starTrailsEnabled = it },
                                 serverEnhancementSupported = serverEnhancementSupported,

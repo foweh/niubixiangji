@@ -637,7 +637,9 @@ class CameraViewModel(application: Application) : AndroidViewModel(application) 
         private set
 
     // 计算摄影场景状态（HDR / 夜景 / 天文 / 人像）。由 ui/camera/ComputationalSceneBar 渲染，
-    // setComputationalScene 转发给 cameraController；未选中时保持 STANDARD 以兼容现有主链路。
+    // selectComputationalScene 转发给 cameraController；未选中时保持 STANDARD 以兼容现有主链路。
+    // 注意：属性名 computationalScene 会生成 setComputationalScene setter，因此本地转发方法不能再叫
+    // setComputationalScene（否则 Platform declaration clash），统一使用 selectComputationalScene。
     var computationalScene: ComputationalScene by mutableStateOf(ComputationalScene.STANDARD)
         private set
 
@@ -3991,7 +3993,7 @@ class CameraViewModel(application: Application) : AndroidViewModel(application) 
      * 与 [setCaptureMode] 同样采用「先更新本地状态、再转发 controller」的范式；
      * controller 内部负责多帧堆栈 / 天文堆栈 / 散景等链路的选择与回退。
      */
-    fun setComputationalScene(scene: ComputationalScene) {
+    fun selectComputationalScene(scene: ComputationalScene) {
         if (computationalScene == scene) return
         computationalScene = scene
         cameraController.setComputationalScene(scene)
@@ -4000,7 +4002,7 @@ class CameraViewModel(application: Application) : AndroidViewModel(application) 
     /**
      * RAW 视频传感器直录开关。仅在 VIDEO 模式有意义；转发 cameraController.setRawVideoMode。
      */
-    fun setRawVideoMode(enabled: Boolean) {
+    fun updateRawVideoMode(enabled: Boolean) {
         if (rawVideoMode == enabled) return
         rawVideoMode = enabled
         cameraController.setRawVideoMode(enabled)
