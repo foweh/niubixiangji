@@ -93,7 +93,8 @@ import com.hinnka.mycamera.ui.settings.FrameManagementScreen
 import com.hinnka.mycamera.ui.settings.PhantomPipCropScreen
 import com.hinnka.mycamera.superres.SuperResModelManagerScreen
 import com.hinnka.mycamera.superres.SuperResRuntime
-import com.hinnka.mycamera.ui.uisettings.ProSettingsScreenimport com.hinnka.mycamera.ui.settings.PresetEditorScreen
+import com.hinnka.mycamera.ui.uisettings.ProSettingsScreen
+import com.hinnka.mycamera.ui.settings.PresetEditorScreen
 import com.hinnka.mycamera.ui.settings.PresetManagementScreen
 import com.hinnka.mycamera.ui.theme.PhotonCameraTheme
 import com.hinnka.mycamera.update.AppUpdateManager

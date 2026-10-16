@@ -1,7 +1,8 @@
 package com.hinnka.mycamera.ui.settings
 
 import com.hinnka.mycamera.ui.components.AppModalBottomSheet
-import com.hinnka.mycamera.ui.uisettings.ProSettingsEntryItemimport com.hinnka.mycamera.aiplatform.ui.AiLutDownloadSection
+import com.hinnka.mycamera.ui.uisettings.ProSettingsEntryItem
+import com.hinnka.mycamera.aiplatform.ui.AiLutDownloadSection
 import com.hinnka.mycamera.aiplatform.ui.AiPlatformSettingsSection
 import com.hinnka.mycamera.lut.LutAiSettingsSection
 
