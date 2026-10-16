@@ -71,7 +71,7 @@ internal object MfsrBlockMatchAligner {
 
         var bestDx = 0
         var bestDy = 0
-        var bestNcc = -2f
+        var bestNcc = -2.0
         for (dyd in -radius..radius) {
             for (dxd in -radius..radius) {
                 var sa = 0.0
@@ -110,7 +110,7 @@ internal object MfsrBlockMatchAligner {
             }
         }
         val conf = bestNcc.coerceIn(0.0, 1.0).toFloat()
-        return MfsrShift(bestDx * step.toFloat(), bestDy * step.toFloat(), conf)
+        return MfsrShift((bestDx * step).toFloat(), (bestDy * step).toFloat(), conf)
     }
 
     private fun sampleAxis(from: Int, to: Int): List<Int> {

@@ -99,6 +99,7 @@ import com.hinnka.mycamera.ui.settings.PresetManagementScreen
 import com.hinnka.mycamera.ui.settings.SettingsScreen
 import com.hinnka.mycamera.ui.theme.PhotonCameraTheme
 import com.hinnka.mycamera.appgallerypreview.AppGalleryPreviewRequest
+import com.hinnka.mycamera.appgallerypreview.AppGalleryPreviewMediaKindResolver
 import com.hinnka.mycamera.appgallerypreview.AppGalleryPreviewMediaSource
 import com.hinnka.mycamera.ui.appgallerypreview.AppGalleryPreviewScreen
 import com.hinnka.mycamera.update.AppUpdateManager
@@ -862,6 +863,7 @@ fun NavigationHost(
                 val args = entry.arguments
                 val request = AppGalleryPreviewRequest(
                     mediaUri = args?.getString("mediaUri").orEmpty(),
+                    mediaKind = AppGalleryPreviewMediaKindResolver.resolve(args?.getString("mediaType"), args?.getString("mediaUri")),
                     mediaType = args?.getString("mediaType"),
                     mediaId = args?.getString("mediaId"),
                     index = args?.getInt("index") ?: 0,

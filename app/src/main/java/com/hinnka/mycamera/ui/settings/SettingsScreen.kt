@@ -188,7 +188,6 @@ import com.hinnka.mycamera.superres.SuperResConfigStore
 import com.hinnka.mycamera.superres.SuperResRuntime
 import com.hinnka.mycamera.superres.SuperResSettingsSection
 import com.hinnka.mycamera.aiplatform.ui.AiFeatureSettingsSection
-import com.hinnka.mycamera.longexposure.LongExposureConfig
 import com.hinnka.mycamera.longexposure.LongExposureLimits
 import com.hinnka.mycamera.astroplan.AstroPlanConfig
 import com.hinnka.mycamera.astroplan.AstroPlanner
@@ -1969,6 +1968,7 @@ fun SettingsScreen(
                     }
                     */
 
+                SettingsPage.PHOTO_MODE -> {
                     // 照片模式设置
                     SettingsSection(
                         title = stringResource(R.string.settings_section_photo_mode),
@@ -2742,7 +2742,7 @@ fun SettingsScreen(
                             modifier = Modifier.padding(vertical = 8.dp)
                         )
 
-                        val superResContext = LocalContext.current
+                        val superResContext = androidx.compose.ui.platform.LocalContext.current
                         val superResConfigStore = remember { SuperResConfigStore(superResContext) }
                         val superResRuntime = remember { SuperResRuntime(superResContext) }
                         val superResConfig by superResConfigStore.configFlow.collectAsState(

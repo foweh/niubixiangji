@@ -160,9 +160,9 @@ private fun DrawScope.drawBuiltInSticker(variant: FaceStickerVariant, widthPx: F
                 color = Color(0xFFFFC107).copy(alpha = a),
                 style = Fill,
             )
-            drawPath(heartPath(-0.26f * w, -0.30f * w, 0.20f * w), Color(0xFFFF5C7A).copy(alpha = a), Fill)
-            drawPath(heartPath(0f, -0.40f * w, 0.24f * w), Color(0xFFFF3B63).copy(alpha = a), Fill)
-            drawPath(heartPath(0.26f * w, -0.30f * w, 0.20f * w), Color(0xFFFF5C7A).copy(alpha = a), Fill)
+            drawPath(heartPath(-0.26f * w, -0.30f * w, 0.20f * w), Color(0xFFFF5C7A).copy(alpha = a), style = Fill)
+            drawPath(heartPath(0f, -0.40f * w, 0.24f * w), Color(0xFFFF3B63).copy(alpha = a), style = Fill)
+            drawPath(heartPath(0.26f * w, -0.30f * w, 0.20f * w), Color(0xFFFF5C7A).copy(alpha = a), style = Fill)
         }
 
         FaceStickerVariant.ROUND_GLASSES -> {

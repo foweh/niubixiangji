@@ -1,7 +1,7 @@
 package com.hinnka.mycamera.funshot
 
 import kotlin.math.max
-import kotlin.math.roundToDouble
+import kotlin.math.round
 import kotlin.math.roundToInt
 import kotlin.math.roundToLong
 
@@ -67,7 +67,7 @@ object FunVideoFrameSampler {
         val span = endMs - startMs
         val nominalCount = (span.toDouble() * effective.videoFrameRate / 1000.0).toInt() + 1
         val count = nominalCount.coerceIn(1, effective.videoMaxFrames)
-        val intervalMs = if (count <= 1) span else (span.toDouble() / (count - 1)).roundToDouble()
+        val intervalMs = if (count <= 1) span.toDouble() else (span.toDouble() / (count - 1)).round()
         val delayCentis = max(2, (intervalMs / 10.0).roundToInt())
 
         val frames = ArrayList<FunVideoFrameRequest>(count)

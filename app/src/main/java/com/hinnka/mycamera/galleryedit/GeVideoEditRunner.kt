@@ -27,8 +27,10 @@ import com.hinnka.mycamera.lut.VideoLutEffect
 import com.hinnka.mycamera.model.ColorRecipeParams
 import com.hinnka.mycamera.utils.PLog
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
@@ -329,10 +331,44 @@ object GeVideoEditRunner {
             val progressHolder = ProgressHolder()
             suspendCancellableCoroutine<File?> { cont ->
                 var settled = false
+
+                // 进度轮询必须在独立协程中跑：suspendCancellableCoroutine 的 block 是非 suspend lambda，
+                // 不能直接调用 delay；参照 lut/VideoExporter.runTransformer 的既有写法。
+                val pollingJob = CoroutineScope(Dispatchers.Main).launch {
+                    while (!settled) {
+                        try {
+                            delay(options.progressPollMs)
+                            if (settled) break
+                            val state = transformer.getProgress(progressHolder)
+                            if (state == Transformer.PROGRESS_STATE_AVAILABLE) {
+                                onProgress?.invoke(progressHolder.progress)
+                                job.report(
+                                    spec.segments.size + progressHolder.progress,
+                                    spec.segments.size + 100,
+                                )
+                            }
+                            job.checkYield()
+                        } catch (cancelled: com.hinnka.mycamera.computational.BgJobCancelledException) {
+                            PLog.i(TAG, "video edit cancelled while exporting")
+                            settled = true
+                            runCatching { transformer.cancel() }
+                            if (cont.isActive) cont.resume(null)
+                            break
+                        } catch (cancellation: CancellationException) {
+                            // 真正的协程取消必须继续向上传播，不能被吞掉
+                            throw cancellation
+                        } catch (error: Exception) {
+                            // 轮询偶发错误不致命：记录后继续下一轮，等 onCompleted/onError 收敛
+                            PLog.w(TAG, "progress polling error: ${error.message}")
+                        }
+                    }
+                }
+
                 val listener = object : Transformer.Listener {
                     override fun onCompleted(composition: Composition, exportResult: ExportResult) {
                         if (settled) return
                         settled = true
+                        pollingJob.cancel()
                         PLog.i(TAG, "video export completed: ${outputFile.absolutePath}")
                         onProgress?.invoke(100)
                         job.report(100, 100)
@@ -346,6 +382,7 @@ object GeVideoEditRunner {
                     ) {
                         if (settled) return
                         settled = true
+                        pollingJob.cancel()
                         PLog.e(TAG, "video export failed: code=${exportException.errorCode}", exportException)
                         if (cont.isActive) cont.resume(null)
                     }
@@ -362,34 +399,9 @@ object GeVideoEditRunner {
                     return@suspendCancellableCoroutine
                 }
 
-                cont.invokeOnCancellation { runCatching { transformer.cancel() } }
-                // 进度轮询：同时承担暂停/取消响应（checkYield 在取消时抛 BgJobCancelledException）
-                while (!settled && cont.isActive) {
-                    try {
-                        delay(options.progressPollMs)
-                        if (settled || !cont.isActive) break
-                        val state = transformer.getProgress(progressHolder)
-                        if (state == Transformer.PROGRESS_STATE_AVAILABLE) {
-                            onProgress?.invoke(progressHolder.progress)
-                            job.report(
-                                spec.segments.size + progressHolder.progress,
-                                spec.segments.size + 100,
-                            )
-                        }
-                        job.checkYield()
-                    } catch (cancelled: com.hinnka.mycamera.computational.BgJobCancelledException) {
-                        PLog.i(TAG, "video edit cancelled while exporting")
-                        settled = true
-                        runCatching { transformer.cancel() }
-                        if (cont.isActive) cont.resume(null)
-                        break
-                    } catch (cancellation: CancellationException) {
-                        // 真正的协程取消必须继续向上传播，不能被吞掉
-                        throw cancellation
-                    } catch (error: Exception) {
-                        // 轮询偶发错误不致命：记录后继续下一轮，等 onCompleted/onError 收敛
-                        PLog.w(TAG, "progress polling error: ${error.message}")
-                    }
+                cont.invokeOnCancellation {
+                    pollingJob.cancel()
+                    runCatching { transformer.cancel() }
                 }
             }
         }
