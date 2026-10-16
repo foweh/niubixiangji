@@ -168,8 +168,6 @@ data class GalleryMediaEntity(
     val spectralFilmPrint: String?,
     val spectralFilmCDensityGain: Float,
     val spectralFilmMDensityGain: Float,
-    val spectralFilmYDensityGain: Float
-)
     val spectralFilmYDensityGain: Float,
 
     // ── 应用内置独立相册（appgallery）扩展列；全部可空，旧数据为 NULL ──
