@@ -206,13 +206,13 @@ bool ClaheEqualize(const float* luma,
   // tile 间双线性插值（消除块状边界）。
   for (int32_t y = 0; y < height; ++y) {
     const float yf = (static_cast<float>(y) + 0.5f) / static_cast<float>(tile_h) - 0.5f;
-    const int32_t yt0_raw = TruncToInt(FloorF(yf));
+    const int32_t yt0_raw = TruncToInt(std::floor(yf));
     const float fy = yf - static_cast<float>(yt0_raw);
     const int32_t yt0 = ClampInt(yt0_raw, 0, tiles_ny - 1);
     const int32_t yt1 = ClampInt(yt0_raw + 1, 0, tiles_ny - 1);
     for (int32_t x = 0; x < width; ++x) {
       const float xf = (static_cast<float>(x) + 0.5f) / static_cast<float>(tile_w) - 0.5f;
-      const int32_t xt0_raw = TruncToInt(FloorF(xf));
+      const int32_t xt0_raw = TruncToInt(std::floor(xf));
       const float fx = xf - static_cast<float>(xt0_raw);
       const int32_t xt0 = ClampInt(xt0_raw, 0, tiles_nx - 1);
       const int32_t xt1 = ClampInt(xt0_raw + 1, 0, tiles_nx - 1);
@@ -600,3 +600,6 @@ Java_com_hinnka_mycamera_nativecompute_NativeComputeBridge_nativeUnsharpChannel(
       static_cast<int32_t>(radius), static_cast<float>(amount), static_cast<int32_t>(threshold));
   return ok ? JNI_TRUE : JNI_FALSE;
 }
+
+}  // namespace nativecompute
+}  // namespace photon

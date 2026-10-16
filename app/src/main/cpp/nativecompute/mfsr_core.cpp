@@ -1236,3 +1236,6 @@ Java_com_hinnka_mycamera_nativecompute_NativeComputeBridge_nativeClampPlane(JNIE
       static_cast<float>(hi));
   return ok ? JNI_TRUE : JNI_FALSE;
 }
+
+}  // namespace nativecompute
+}  // namespace photon

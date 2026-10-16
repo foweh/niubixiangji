@@ -279,3 +279,6 @@ Java_com_hinnka_mycamera_nativecompute_NativeComputeBridge_nativeSubtractMeanAcc
       static_cast<int32_t>(hot_threshold), mask_hot_pixels == JNI_TRUE);
   return static_cast<jint>(hot_pixels);
 }
+
+}  // namespace nativecompute
+}  // namespace photon

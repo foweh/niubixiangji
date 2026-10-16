@@ -134,6 +134,13 @@ bool IsLocalMax(const std::vector<float>& response, int w, int x, int y, float v
   return true;
 }
 
+/** Harris 角点候选：像素坐标 + Harris 响应值（供 BriefDescribe 使用）。 */
+struct PanoramaKeyPoint {
+  float x = 0.f;
+  float y = 0.f;
+  float score = 0.f;
+};
+
 // ----------------------------------------------------------------- 3×3 齐次矩阵
 struct Matrix3 {
   double v[9];
