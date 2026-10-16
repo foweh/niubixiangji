@@ -38,13 +38,7 @@ import com.hinnka.mycamera.camera.MultiFrameConfig
  */
 @Composable
 fun ComputationalSceneBar(
-
-LongExposureEngine.submitLightPainting(  // 或 submitSlowShutter / submitFireworks / submitSuperMoon
-    config = lightPaintingConfig, darkFrameConfig = darkConfig,
-    frameSource = LongExposureJobRunner.FileFrameSource(paths, width, height),
-    previewEnabled = true, onPreview = { plane, index -> /* 更新预览 Bitmap */ },
-    onFinish = { plane -> /* 保存/送入 GalleryManager */ }
-)    scene: ComputationalScene,
+    scene: ComputationalScene,
     onSceneSelected: (ComputationalScene) -> Unit,
     isVideoMode: Boolean,
     rawVideoEnabled: Boolean,
