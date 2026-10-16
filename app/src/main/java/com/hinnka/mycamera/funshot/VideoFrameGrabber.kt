@@ -67,7 +67,7 @@ object FunVideoFrameSampler {
         val span = endMs - startMs
         val nominalCount = (span.toDouble() * effective.videoFrameRate / 1000.0).toInt() + 1
         val count = nominalCount.coerceIn(1, effective.videoMaxFrames)
-        val intervalMs = if (count <= 1) span.toDouble() else (span.toDouble() / (count - 1)).round()
+        val intervalMs = if (count <= 1) span.toDouble() else round(span.toDouble() / (count - 1))
         val delayCentis = max(2, (intervalMs / 10.0).roundToInt())
 
         val frames = ArrayList<FunVideoFrameRequest>(count)
