@@ -1,0 +1,100 @@
+{
+  "ops_file": "appgallery",
+  "dry_run": false,
+  "ok": 13,
+  "skip": 0,
+  "fail": 0,
+  "results": [
+    {
+      "i": 0,
+      "op": "x_insert_before",
+      "file": "app/src/main/java/com/hinnka/mycamera/computational/BgJobRunner.kt",
+      "status": "OK",
+      "detail": "x_insert_before ×1 [exact] (delivery/patches/appgallery_patch.md:60)"
+    },
+    {
+      "i": 1,
+      "op": "x_replace_lit",
+      "file": "app/src/main/java/com/hinnka/mycamera/gallery/db/GalleryDatabase.kt",
+      "status": "OK",
+      "detail": "x_replace ×1 [exact] (delivery/patches/appgallery_patch.md:121)"
+    },
+    {
+      "i": 2,
+      "op": "x_insert_before",
+      "file": "app/src/main/java/com/hinnka/mycamera/gallery/db/GalleryDatabase.kt",
+      "status": "OK",
+      "detail": "x_insert_before ×1 [exact] (delivery/patches/appgallery_patch.md:133)"
+    },
+    {
+      "i": 3,
+      "op": "x_replace_lit",
+      "file": "app/src/main/java/com/hinnka/mycamera/gallery/db/GalleryDatabase.kt",
+      "status": "OK",
+      "detail": "x_replace ×1 [exact] (delivery/patches/appgallery_patch.md:165)"
+    },
+    {
+      "i": 4,
+      "op": "x_insert_after",
+      "file": "app/src/main/java/com/hinnka/mycamera/gallery/db/GalleryMediaEntity.kt",
+      "status": "OK",
+      "detail": "x_insert_after ×1 [exact] (delivery/patches/appgallery_patch.md:184)"
+    },
+    {
+      "i": 5,
+      "op": "x_replace_lit",
+      "file": "app/src/main/java/com/hinnka/mycamera/gallery/db/GalleryMediaStore.kt",
+      "status": "OK",
+      "detail": "x_replace ×1 [exact] (delivery/patches/appgallery_patch.md:213)"
+    },
+    {
+      "i": 6,
+      "op": "x_replace_lit",
+      "file": "app/src/main/java/com/hinnka/mycamera/gallery/db/GalleryMediaStore.kt",
+      "status": "OK",
+      "detail": "x_replace ×1 [exact] (delivery/patches/appgallery_patch.md:237)"
+    },
+    {
+      "i": 7,
+      "op": "x_insert_before",
+      "file": "app/src/main/java/com/hinnka/mycamera/gallery/db/GalleryMediaStore.kt",
+      "status": "OK",
+      "detail": "x_insert_before ×1 [exact] (delivery/patches/appgallery_patch.md:245)"
+    },
+    {
+      "i": 8,
+      "op": "x_insert_before",
+      "file": "app/src/main/java/com/hinnka/mycamera/gallery/db/GalleryMediaDao.kt",
+      "status": "OK",
+      "detail": "x_insert_before ×1 [exact] (delivery/patches/appgallery_patch.md:279)"
+    },
+    {
+      "i": 9,
+      "op": "x_replace_lit",
+      "file": "app/src/main/res/xml/file_paths.xml",
+      "status": "OK",
+      "detail": "x_replace ×1 [exact] (delivery/patches/appgallery_patch.md:312)"
+    },
+    {
+      "i": 10,
+      "op": "x_replace_lit",
+      "file": "app/src/main/java/com/hinnka/mycamera/MainActivity.kt",
+      "status": "OK",
+      "detail": "x_replace ×1 [exact] (delivery/patches/appgallery_patch.md:335)"
+    },
+    {
+      "i": 11,
+      "op": "x_insert_before",
+      "file": "app/src/main/java/com/hinnka/mycamera/MainActivity.kt",
+      "status": "OK",
+      "detail": "x_insert_before ×1 [exact] (delivery/patches/appgallery_patch.md:349)"
+    },
+    {
+      "i": 12,
+      "op": "insert_after",
+      "file": "app/src/main/java/com/hinnka/mycamera/MainActivity.kt",
+      "status": "OK",
+      "detail": "insert_after ×1 [exact]"
+    }
+  ]
+}

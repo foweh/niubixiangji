@@ -1,0 +1,184 @@
+{
+  "ops_file": "nativecompute",
+  "dry_run": false,
+  "ok": 25,
+  "skip": 0,
+  "fail": 0,
+  "results": [
+    {
+      "i": 0,
+      "op": "x_insert_after",
+      "file": "app/src/main/cpp/CMakeLists.txt",
+      "status": "OK",
+      "detail": "x_insert_after ×1 [exact] (delivery/patches/nativecompute_patch.md:55)"
+    },
+    {
+      "i": 1,
+      "op": "x_insert_before",
+      "file": "app/src/main/cpp/CMakeLists.txt",
+      "status": "OK",
+      "detail": "x_insert_before ×1 [exact] (delivery/patches/nativecompute_patch.md:73)"
+    },
+    {
+      "i": 2,
+      "op": "x_insert_before",
+      "file": "app/src/main/java/com/hinnka/mycamera/multiframesr/MfsrFft.kt",
+      "status": "OK",
+      "detail": "x_insert_before ×1 [exact] (delivery/patches/nativecompute_patch.md:102)"
+    },
+    {
+      "i": 3,
+      "op": "x_insert_before",
+      "file": "app/src/main/java/com/hinnka/mycamera/multiframesr/MfsrFft.kt",
+      "status": "OK",
+      "detail": "x_insert_before ×1 [exact] (delivery/patches/nativecompute_patch.md:109)"
+    },
+    {
+      "i": 4,
+      "op": "x_insert_before",
+      "file": "app/src/main/java/com/hinnka/mycamera/multiframesr/MfsrShiftAndAdd.kt",
+      "status": "OK",
+      "detail": "x_insert_before ×1 [exact] (delivery/patches/nativecompute_patch.md:132)"
+    },
+    {
+      "i": 5,
+      "op": "x_insert_after",
+      "file": "app/src/main/java/com/hinnka/mycamera/multiframesr/MfsrShiftAndAdd.kt",
+      "status": "OK",
+      "detail": "x_insert_after ×1 [exact] (delivery/patches/nativecompute_patch.md:139)"
+    },
+    {
+      "i": 6,
+      "op": "x_insert_after",
+      "file": "app/src/main/java/com/hinnka/mycamera/multiframesr/MfsrShiftAndAdd.kt",
+      "status": "OK",
+      "detail": "x_insert_after ×1 [exact] (delivery/patches/nativecompute_patch.md:162)"
+    },
+    {
+      "i": 7,
+      "op": "x_insert_before",
+      "file": "app/src/main/java/com/hinnka/mycamera/multiframesr/MfsrIbp.kt",
+      "status": "OK",
+      "detail": "x_insert_before ×1 [exact] (delivery/patches/nativecompute_patch.md:182)"
+    },
+    {
+      "i": 8,
+      "op": "x_insert_after",
+      "file": "app/src/main/java/com/hinnka/mycamera/multiframesr/MfsrIbp.kt",
+      "status": "OK",
+      "detail": "x_insert_after ×1 [exact] (delivery/patches/nativecompute_patch.md:191)"
+    },
+    {
+      "i": 9,
+      "op": "x_replace",
+      "file": "app/src/main/java/com/hinnka/mycamera/multiframesr/MfsrIbp.kt",
+      "status": "OK",
+      "detail": "x_replace ×1 [exact] (delivery/patches/nativecompute_patch.md:228)"
+    },
+    {
+      "i": 10,
+      "op": "x_insert_before",
+      "file": "app/src/main/java/com/hinnka/mycamera/multiframesr/MfsrRefiner.kt",
+      "status": "OK",
+      "detail": "x_insert_before ×1 [exact] (delivery/patches/nativecompute_patch.md:246)"
+    },
+    {
+      "i": 11,
+      "op": "x_insert_after",
+      "file": "app/src/main/java/com/hinnka/mycamera/multiframesr/MfsrRefiner.kt",
+      "status": "OK",
+      "detail": "x_insert_after ×1 [exact] (delivery/patches/nativecompute_patch.md:254)"
+    },
+    {
+      "i": 12,
+      "op": "x_insert_before",
+      "file": "app/src/main/java/com/hinnka/mycamera/multiframesr/MfsrRefiner.kt",
+      "status": "OK",
+      "detail": "x_insert_before ×1 [exact] (delivery/patches/nativecompute_patch.md:274)"
+    },
+    {
+      "i": 13,
+      "op": "x_insert_before",
+      "file": "app/src/main/java/com/hinnka/mycamera/multiframesr/MfsrCore.kt",
+      "status": "OK",
+      "detail": "x_insert_before ×1 [exact] (delivery/patches/nativecompute_patch.md:295)"
+    },
+    {
+      "i": 14,
+      "op": "x_replace_lit",
+      "file": "app/src/main/java/com/hinnka/mycamera/multiframesr/MfsrCore.kt",
+      "status": "OK",
+      "detail": "x_replace ×1 [exact] (delivery/patches/nativecompute_patch.md:304)"
+    },
+    {
+      "i": 15,
+      "op": "x_insert_before",
+      "file": "app/src/main/java/com/hinnka/mycamera/enhance/ClaheProcessor.kt",
+      "status": "OK",
+      "detail": "x_insert_before ×1 [exact] (delivery/patches/nativecompute_patch.md:322)"
+    },
+    {
+      "i": 16,
+      "op": "x_replace_lit",
+      "file": "app/src/main/java/com/hinnka/mycamera/enhance/ClaheProcessor.kt",
+      "status": "OK",
+      "detail": "x_replace ×1 [exact] (delivery/patches/nativecompute_patch.md:330)"
+    },
+    {
+      "i": 17,
+      "op": "x_insert_before",
+      "file": "app/src/main/java/com/hinnka/mycamera/enhance/ClaheProcessor.kt",
+      "status": "OK",
+      "detail": "x_insert_before ×1 [exact] (delivery/patches/nativecompute_patch.md:359)"
+    },
+    {
+      "i": 18,
+      "op": "x_insert_before",
+      "file": "app/src/main/java/com/hinnka/mycamera/enhance/BilateralFilterProcessor.kt",
+      "status": "OK",
+      "detail": "x_insert_before ×1 [exact] (delivery/patches/nativecompute_patch.md:376)"
+    },
+    {
+      "i": 19,
+      "op": "x_insert_before",
+      "file": "app/src/main/java/com/hinnka/mycamera/enhance/BilateralFilterProcessor.kt",
+      "status": "OK",
+      "detail": "x_insert_before ×1 [exact] (delivery/patches/nativecompute_patch.md:383)"
+    },
+    {
+      "i": 20,
+      "op": "x_insert_before",
+      "file": "app/src/main/java/com/hinnka/mycamera/enhance/UnsharpMaskProcessor.kt",
+      "status": "OK",
+      "detail": "x_insert_before ×1 [exact] (delivery/patches/nativecompute_patch.md:410)"
+    },
+    {
+      "i": 21,
+      "op": "x_replace",
+      "file": "app/src/main/java/com/hinnka/mycamera/enhance/UnsharpMaskProcessor.kt",
+      "status": "OK",
+      "detail": "x_replace ×1 [exact] (delivery/patches/nativecompute_patch.md:425)"
+    },
+    {
+      "i": 22,
+      "op": "x_insert_before",
+      "file": "app/src/main/java/com/hinnka/mycamera/longexposure/LongExposureStacker.kt",
+      "status": "OK",
+      "detail": "x_insert_before ×1 [exact] (delivery/patches/nativecompute_patch.md:454)"
+    },
+    {
+      "i": 23,
+      "op": "x_replace",
+      "file": "app/src/main/java/com/hinnka/mycamera/longexposure/LongExposureStacker.kt",
+      "status": "OK",
+      "detail": "x_replace ×1 [exact] (delivery/patches/nativecompute_patch.md:479)"
+    },
+    {
+      "i": 24,
+      "op": "x_insert_after",
+      "file": "app/src/main/java/com/hinnka/mycamera/longexposure/DarkFrameSubtractor.kt",
+      "status": "OK",
+      "detail": "x_insert_after ×1 [exact] (delivery/patches/nativecompute_patch.md:538)"
+    }
+  ]
+}

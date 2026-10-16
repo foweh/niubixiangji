@@ -11,8 +11,11 @@ import com.hinnka.mycamera.livephoto.LivePhotoRecorder
 import com.hinnka.mycamera.camera.MeteringMode
 import com.hinnka.mycamera.lut.LutConfig
 import com.hinnka.mycamera.lut.LutRenderer
+import com.hinnka.mycamera.logvideo.LogCurveTrim
 import com.hinnka.mycamera.raw.RawEnginePreviewPlan
 import com.hinnka.mycamera.preview.EyeFocusPreviewFrame
+import com.hinnka.mycamera.viewfinder.PeakingEnhanceConfig
+import com.hinnka.mycamera.viewfinder.ZebraConfig
 import com.hinnka.mycamera.preview.EyeFocusProcessingTiming
 import com.hinnka.mycamera.lut.PreviewCaptureSource
 import com.hinnka.mycamera.model.ColorRecipeParams
@@ -48,6 +51,9 @@ class CameraGLSurfaceView @JvmOverloads constructor(
     private var currentPreviewStabilizationStrength = 0f
 
     var onHistogramUpdated: ((IntArray) -> Unit)? = null
+
+    /** 取景器辅助取帧回调（直方图 / AR 贴纸）；沿用眼睛对焦同款帧类型。 */
+    var onViewfinderInputAvailable: ((EyeFocusPreviewFrame) -> Unit)? = null
     var onMeteringUpdated: ((Double, Double) -> Unit)? = null
     var onHighlightPointUpdated: ((Float, Float) -> Unit)? = null
     var onEyeFocusInputAvailable: ((EyeFocusPreviewFrame) -> Unit)? = null
@@ -99,6 +105,10 @@ class CameraGLSurfaceView @JvmOverloads constructor(
 
         renderer.onHistogramUpdated = { histogram ->
             onHistogramUpdated?.invoke(histogram)
+        }
+
+        renderer.onViewfinderInputAvailable = { frame ->
+            onViewfinderInputAvailable?.invoke(frame)
         }
 
         renderer.onMeteringUpdated = { totalWeight, weightedSumLuminance ->
@@ -258,6 +268,25 @@ class CameraGLSurfaceView @JvmOverloads constructor(
 
     fun setFocusPeakingEnabled(enabled: Boolean) {
         renderer.focusPeakingEnabled = enabled
+        requestRender()
+    }
+
+    /** 取景器辅助：斑马纹配置（GL 叠加）。 */
+    fun setViewfinderZebra(config: ZebraConfig) {
+        renderer.zebraConfig = config
+        requestRender()
+    }
+
+    /** 取景器辅助：峰值对焦强化配置（GL 叠加）。 */
+    fun setViewfinderPeaking(config: PeakingEnhanceConfig, useEnhanced: Boolean) {
+        renderer.peakingConfig = config
+        renderer.peakingEnhancedEnabled = useEnhanced
+        requestRender()
+    }
+
+    /** 取景器辅助：采样繁忙标记（消费帧后必须调回 false，否则取帧会停）。 */
+    fun setViewfinderSampleBusy(busy: Boolean) {
+        renderer.isViewfinderSampleBusy = busy
         requestRender()
     }
 
@@ -452,6 +481,12 @@ class CameraGLSurfaceView @JvmOverloads constructor(
     fun setVideoLogProfile(profile: VideoLogProfile) {
         renderer.videoLogProfile = profile
         requestRender()
+    }
+    /** Log 曲线微调（黑电平/斜率/峰值）→ GL 侧三个 uniform；identity 时 shader 走原路径。 */
+    fun setLogCurveTrim(trim: LogCurveTrim) {
+        queueEvent {
+            renderer.updateLogCurveTrim(trim)
+        }
     }
 
     override fun onPause() {

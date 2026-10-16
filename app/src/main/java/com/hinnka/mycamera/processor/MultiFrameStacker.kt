@@ -15,7 +15,9 @@ import com.hinnka.mycamera.raw.RawSceneAERawStats
 import com.hinnka.mycamera.utils.BitmapUtils
 import com.hinnka.mycamera.computational.AstroStacker
 import com.hinnka.mycamera.computational.BgJob
+import com.hinnka.mycamera.computational.BgJobPriority
 import com.hinnka.mycamera.computational.BgJobRunner
+import com.hinnka.mycamera.computational.BgTaskType
 import com.hinnka.mycamera.camera.PsStackType
 
 enum class RawStackBufferLayout {
@@ -237,7 +239,13 @@ object MultiFrameStacker {
         aspectRatio: AspectRatio?,
         colorSpace: ColorSpace,
     ): Bitmap? {
-        if (frames.size < 3) return null
+        // 最小帧数由配置侧决定（非包围 1 帧、包围 2 帧）；<2 帧无法构成 HDR，交回上层回退单帧。
+        val minFrames = MultiFrameConfig.MIN_HDR_PLUS_BRACKET_FRAME_COUNT // = 2
+        if (frames.size < minFrames) {
+            PLog.w(TAG, "HDR YUV stack needs >=$minFrames frames, got ${frames.size}; fallback single frame")
+            frames.forEach { it.image.close() }
+            return null
+        }
         val images = frames.map { it.image }
         val width = images[0].width
         val height = images[0].height
@@ -465,8 +473,9 @@ object MultiFrameStacker {
     }
 
     // ------------------------------------------------------------------
-    // 长时任务后台化（用户 2026-10-15 性能策略：低优先级慢速完成，可暂停/恢复/进度）
-    // 这些是 job 化入口，不改变上面同步方法的行为；onResult 在后台线程回调。
+    // 长时任务后台化（用户 2026-10-15 性能策略 + 2026-10-16 性能调度硬约束）
+    // 统一进 BgJobRunner 全局队列：单消费者串行、分片节流限频、内存上限、可暂停/恢复/取消。
+    // 不改变上面同步方法的行为；onResult 在后台线程回调。
     // ------------------------------------------------------------------
 
     /** 星轨（200+ 帧）后台慢速堆栈。返回 [BgJob]（UI 读 state 显示进度条）。 */
@@ -478,12 +487,24 @@ object MultiFrameStacker {
         displayName: String = "Star Trails",
         accumulationMode: AstroStacker.TrailAccumulationMode = AstroStacker.TrailAccumulationMode.LIGHTEN_MAX,
         onResult: (Bitmap?) -> Unit,
-    ): BgJob = BgJobRunner.submit(displayName, chunkSize = 8) {
-        val result = AstroStacker.stackStarTrails(
-            images = images, rotation = rotation, aspectRatio = aspectRatio,
-            mode = accumulationMode, job = this,
-        )
-        images.forEach { it.close() }
+    ): BgJob = BgJobRunner.submit(
+        name = displayName,
+        chunkSize = 8,
+        type = BgTaskType.ASTRO,
+        priority = BgJobPriority.NORMAL,
+    ) {
+        val result = try {
+            AstroStacker.stackStarTrails(
+                images = images, rotation = rotation, aspectRatio = aspectRatio,
+                mode = accumulationMode, job = this,
+            )
+        } catch (e: Throwable) {
+            // 取消/异常：清理输入帧，避免 Image 泄漏。
+            PLog.w(TAG, "star trails job aborted: ${e.message}")
+            null
+        } finally {
+            images.forEach { it.close() }
+        }
         onResult(result)
     }
 
@@ -498,12 +519,88 @@ object MultiFrameStacker {
         align: Boolean,
         displayName: String = "Stack",
         onResult: (Bitmap?) -> Unit,
-    ): BgJob = BgJobRunner.submit(displayName, chunkSize = 8) {
-        val result = AstroStacker.stackPs(
-            images = images, rotation = rotation, aspectRatio = aspectRatio,
-            type = type, frameCount = frameCount, align = align, job = this,
+    ): BgJob = BgJobRunner.submit(
+        name = displayName,
+        chunkSize = 8,
+        type = BgTaskType.STACK,
+        priority = BgJobPriority.NORMAL,
+    ) {
+        val result = try {
+            AstroStacker.stackPs(
+                images = images, rotation = rotation, aspectRatio = aspectRatio,
+                type = type, frameCount = frameCount, align = align, job = this,
+            )
+        } catch (e: Throwable) {
+            PLog.w(TAG, "PS stack job aborted: ${e.message}")
+            null
+        } finally {
+            images.forEach { it.close() }
+        }
+        onResult(result)
+    }
+
+    /** 天文堆栈后台化（银河/深空，默认免对齐 + sigma-clip）。 */
+    fun processAstroBurstAsync(
+        images: List<SafeImage>,
+        rotation: Int,
+        aspectRatio: AspectRatio?,
+        colorSpace: ColorSpace,
+        displayName: String = "Astro",
+        align: Boolean = false,
+        sigmaClipSigma: Float = AstroStacker.DEFAULT_SIGMA_CLIP_SIGMA,
+        onResult: (Bitmap?) -> Unit,
+    ): BgJob = BgJobRunner.submit(
+        name = displayName,
+        chunkSize = 8,
+        type = BgTaskType.ASTRO,
+        priority = BgJobPriority.NORMAL,
+    ) {
+        val result = try {
+            AstroStacker.stackAstro(
+                images = images, rotation = rotation, aspectRatio = aspectRatio,
+                sigmaClipSigma = sigmaClipSigma, align = align, job = this,
+            )
+        } catch (e: Throwable) {
+            PLog.w(TAG, "astro job aborted: ${e.message}")
+            null
+        } finally {
+            images.forEach { it.close() }
+        }
+        onResult(result)
+    }
+
+    /**
+     * 多帧 HDR 合成后台化入口。
+     *
+     * 帧收集仍由控制器按既有 HdrBracketConfig / MultiFrameExposurePlanner 路径完成；
+     * 本入口只把「合并」放进全局性能队列慢慢跑（不抢前台）。
+     * 若 [processHdrBurstYuv] 依赖调用方线程的 GL 上下文，请改用 [BgJobRunner.submit]
+     * 并在任务体里自行 marshal 到该上下文；本入口适用于 CPU 侧/离线合成路径。
+     */
+    fun processHdrBurstYuvAsync(
+        frames: List<YuvHdrStackFrame>,
+        fusionExposureProducts: FloatArray?,
+        rotation: Int,
+        aspectRatio: AspectRatio?,
+        colorSpace: ColorSpace,
+        displayName: String = "HDR",
+        onResult: (Bitmap?) -> Unit,
+    ): BgJob = BgJobRunner.submit(
+        name = displayName,
+        chunkSize = 12,
+        type = BgTaskType.HDR,
+        priority = BgJobPriority.NORMAL,
+    ) {
+        report(0, 1)
+        val result = processHdrBurstYuv(
+            frames = frames,
+            fusionExposureProducts = fusionExposureProducts,
+            rotation = rotation,
+            aspectRatio = aspectRatio,
+            colorSpace = colorSpace,
         )
-        images.forEach { it.close() }
+        report(1, 1)
+        checkYield()
         onResult(result)
     }
 

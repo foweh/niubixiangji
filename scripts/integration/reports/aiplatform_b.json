@@ -1,0 +1,79 @@
+{
+  "ops_file": "aiplatform_b",
+  "dry_run": false,
+  "ok": 10,
+  "skip": 0,
+  "fail": 0,
+  "results": [
+    {
+      "i": 0,
+      "op": "replace",
+      "file": "app/src/main/java/com/hinnka/mycamera/viewmodel/CameraViewModel.kt",
+      "status": "OK",
+      "detail": "replace ×1 [exact]"
+    },
+    {
+      "i": 1,
+      "op": "x_insert_before",
+      "file": "app/src/main/java/com/hinnka/mycamera/viewmodel/CameraViewModel.kt",
+      "status": "OK",
+      "detail": "x_insert_before ×1 [exact] (delivery/patches/aiplatform_patch.md:348)"
+    },
+    {
+      "i": 2,
+      "op": "insert_after",
+      "file": "app/src/main/java/com/hinnka/mycamera/viewmodel/CameraViewModel.kt",
+      "status": "OK",
+      "detail": "insert_after ×1 [exact]"
+    },
+    {
+      "i": 3,
+      "op": "insert_after",
+      "file": "app/src/main/java/com/hinnka/mycamera/viewmodel/CameraViewModel.kt",
+      "status": "OK",
+      "detail": "insert_after ×1 [exact]"
+    },
+    {
+      "i": 4,
+      "op": "replace",
+      "file": "app/src/main/java/com/hinnka/mycamera/computational/ServerEnhancementClient.kt",
+      "status": "OK",
+      "detail": "replace ×1 [exact]"
+    },
+    {
+      "i": 5,
+      "op": "x_insert_before",
+      "file": "app/src/main/java/com/hinnka/mycamera/computational/ServerEnhancementClient.kt",
+      "status": "OK",
+      "detail": "x_insert_before ×1 [exact] (delivery/patches/aiplatform_patch.md:469)"
+    },
+    {
+      "i": 6,
+      "op": "insert_after",
+      "file": "app/src/main/java/com/hinnka/mycamera/computational/ServerEnhancementClient.kt",
+      "status": "OK",
+      "detail": "insert_after ×1 [exact]"
+    },
+    {
+      "i": 7,
+      "op": "replace",
+      "file": "app/src/main/java/com/hinnka/mycamera/computational/ServerEnhancementClient.kt",
+      "status": "OK",
+      "detail": "replace ×1 [exact]"
+    },
+    {
+      "i": 8,
+      "op": "delete",
+      "file": "app/src/main/java/com/hinnka/mycamera/computational/ServerEnhancementClient.kt",
+      "status": "OK",
+      "detail": "delete ×1 [exact]"
+    },
+    {
+      "i": 9,
+      "op": "delete",
+      "file": "app/src/main/java/com/hinnka/mycamera/computational/ServerEnhancementClient.kt",
+      "status": "OK",
+      "detail": "delete ×1 [exact]"
+    }
+  ]
+}

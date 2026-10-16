@@ -1,0 +1,184 @@
+{
+  "ops_file": "viewfinder",
+  "dry_run": false,
+  "ok": 25,
+  "skip": 0,
+  "fail": 0,
+  "results": [
+    {
+      "i": 0,
+      "op": "x_insert_before",
+      "file": "app/src/main/java/com/hinnka/mycamera/computational/BgJobRunner.kt",
+      "status": "OK",
+      "detail": "x_insert_before ×1 [exact] (delivery/patches/viewfinder_patch.md:52)"
+    },
+    {
+      "i": 1,
+      "op": "x_insert_after",
+      "file": "app/src/main/res/values/strings.xml",
+      "status": "OK",
+      "detail": "x_insert_after ×1 [exact] (delivery/patches/viewfinder_patch.md:73)"
+    },
+    {
+      "i": 2,
+      "op": "x_insert_after",
+      "file": "app/src/main/java/com/hinnka/mycamera/lut/LutRenderer.kt",
+      "status": "OK",
+      "detail": "x_insert_after ×1 [exact] (delivery/patches/viewfinder_patch.md:149)"
+    },
+    {
+      "i": 3,
+      "op": "x_insert_after",
+      "file": "app/src/main/java/com/hinnka/mycamera/lut/LutRenderer.kt",
+      "status": "OK",
+      "detail": "x_insert_after ×1 [exact] (delivery/patches/viewfinder_patch.md:165)"
+    },
+    {
+      "i": 4,
+      "op": "x_insert_after",
+      "file": "app/src/main/java/com/hinnka/mycamera/lut/LutRenderer.kt",
+      "status": "OK",
+      "detail": "x_insert_after ×1 [exact] (delivery/patches/viewfinder_patch.md:203)"
+    },
+    {
+      "i": 5,
+      "op": "x_replace",
+      "file": "app/src/main/java/com/hinnka/mycamera/lut/LutRenderer.kt",
+      "status": "OK",
+      "detail": "x_replace ×1 [exact] (delivery/patches/viewfinder_patch.md:222)"
+    },
+    {
+      "i": 6,
+      "op": "x_insert_after",
+      "file": "app/src/main/java/com/hinnka/mycamera/lut/LutRenderer.kt",
+      "status": "OK",
+      "detail": "x_insert_after ×1 [exact] (delivery/patches/viewfinder_patch.md:267)"
+    },
+    {
+      "i": 7,
+      "op": "x_insert_after",
+      "file": "app/src/main/java/com/hinnka/mycamera/lut/LutRenderer.kt",
+      "status": "OK",
+      "detail": "x_insert_after ×1 [exact] (delivery/patches/viewfinder_patch.md:281)"
+    },
+    {
+      "i": 8,
+      "op": "x_insert_after",
+      "file": "app/src/main/java/com/hinnka/mycamera/lut/LutRenderer.kt",
+      "status": "OK",
+      "detail": "x_insert_after ×1 [exact] (delivery/patches/viewfinder_patch.md:295)"
+    },
+    {
+      "i": 9,
+      "op": "x_insert_after",
+      "file": "app/src/main/java/com/hinnka/mycamera/lut/LutRenderer.kt",
+      "status": "OK",
+      "detail": "x_insert_after ×1 [exact] (delivery/patches/viewfinder_patch.md:317)"
+    },
+    {
+      "i": 10,
+      "op": "x_replace_lit",
+      "file": "app/src/main/java/com/hinnka/mycamera/lut/LutRenderer.kt",
+      "status": "OK",
+      "detail": "x_replace ×1 [exact] (delivery/patches/viewfinder_patch.md:329)"
+    },
+    {
+      "i": 11,
+      "op": "x_insert_before",
+      "file": "app/src/main/java/com/hinnka/mycamera/lut/LutRenderer.kt",
+      "status": "OK",
+      "detail": "x_insert_before ×1 [exact] (delivery/patches/viewfinder_patch.md:349)"
+    },
+    {
+      "i": 12,
+      "op": "x_insert_after",
+      "file": "app/src/main/java/com/hinnka/mycamera/lut/LutRenderer.kt",
+      "status": "OK",
+      "detail": "x_insert_after ×1 [exact] (delivery/patches/viewfinder_patch.md:380)"
+    },
+    {
+      "i": 13,
+      "op": "x_insert_after",
+      "file": "app/src/main/java/com/hinnka/mycamera/ui/camera/CameraGLSurfaceView.kt",
+      "status": "OK",
+      "detail": "x_insert_after ×1 [exact] (delivery/patches/viewfinder_patch.md:400)"
+    },
+    {
+      "i": 14,
+      "op": "x_insert_after",
+      "file": "app/src/main/java/com/hinnka/mycamera/ui/camera/CameraGLSurfaceView.kt",
+      "status": "OK",
+      "detail": "x_insert_after ×1 [exact] (delivery/patches/viewfinder_patch.md:421)"
+    },
+    {
+      "i": 15,
+      "op": "x_insert_after",
+      "file": "app/src/main/java/com/hinnka/mycamera/ui/camera/CameraGLSurfaceView.kt",
+      "status": "OK",
+      "detail": "x_insert_after ×1 [exact] (delivery/patches/viewfinder_patch.md:455)"
+    },
+    {
+      "i": 16,
+      "op": "insert_after",
+      "file": "app/src/main/java/com/hinnka/mycamera/ui/camera/CameraGLSurfaceView.kt",
+      "status": "OK",
+      "detail": "insert_after ×1 [exact]"
+    },
+    {
+      "i": 17,
+      "op": "x_insert_after",
+      "file": "app/src/main/java/com/hinnka/mycamera/ui/camera/CameraPreviewGL.kt",
+      "status": "OK",
+      "detail": "x_insert_after ×1 [exact] (delivery/patches/viewfinder_patch.md:474)"
+    },
+    {
+      "i": 18,
+      "op": "x_insert_after",
+      "file": "app/src/main/java/com/hinnka/mycamera/ui/camera/CameraPreviewGL.kt",
+      "status": "OK",
+      "detail": "x_insert_after ×1 [exact] (delivery/patches/viewfinder_patch.md:491)"
+    },
+    {
+      "i": 19,
+      "op": "x_insert_after",
+      "file": "app/src/main/java/com/hinnka/mycamera/ui/camera/CameraPreviewGL.kt",
+      "status": "OK",
+      "detail": "x_insert_after ×1 [exact] (delivery/patches/viewfinder_patch.md:506)"
+    },
+    {
+      "i": 20,
+      "op": "insert_after",
+      "file": "app/src/main/java/com/hinnka/mycamera/ui/camera/CameraPreviewGL.kt",
+      "status": "OK",
+      "detail": "insert_after ×1 [exact]"
+    },
+    {
+      "i": 21,
+      "op": "insert_after",
+      "file": "app/src/main/java/com/hinnka/mycamera/ui/camera/CameraScreen.kt",
+      "status": "OK",
+      "detail": "insert_after ×1 [exact]"
+    },
+    {
+      "i": 22,
+      "op": "x_insert_after",
+      "file": "app/src/main/java/com/hinnka/mycamera/ui/camera/CameraScreen.kt",
+      "status": "OK",
+      "detail": "x_insert_after ×1 [exact] (delivery/patches/viewfinder_patch.md:524)"
+    },
+    {
+      "i": 23,
+      "op": "insert_after",
+      "file": "app/src/main/java/com/hinnka/mycamera/ui/camera/CameraScreen.kt",
+      "status": "OK",
+      "detail": "insert_after ×1 [exact]"
+    },
+    {
+      "i": 24,
+      "op": "x_insert_after",
+      "file": "app/src/main/java/com/hinnka/mycamera/ui/camera/CameraScreen.kt",
+      "status": "OK",
+      "detail": "x_insert_after ×1 [exact] (delivery/patches/viewfinder_patch.md:575)"
+    }
+  ]
+}

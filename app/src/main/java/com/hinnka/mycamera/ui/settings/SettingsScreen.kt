@@ -1,6 +1,9 @@
 package com.hinnka.mycamera.ui.settings
 
 import com.hinnka.mycamera.ui.components.AppModalBottomSheet
+import com.hinnka.mycamera.ui.uisettings.ProSettingsEntryItemimport com.hinnka.mycamera.aiplatform.ui.AiLutDownloadSection
+import com.hinnka.mycamera.aiplatform.ui.AiPlatformSettingsSection
+import com.hinnka.mycamera.lut.LutAiSettingsSection
 
 import android.content.Context
 import android.content.Intent
@@ -179,6 +182,10 @@ import java.util.Locale
 import java.util.UUID
 import kotlin.math.roundToInt
 import com.hinnka.mycamera.ui.icons.AppIcons
+import com.hinnka.mycamera.superres.SuperResConfig
+import com.hinnka.mycamera.superres.SuperResConfigStore
+import com.hinnka.mycamera.superres.SuperResRuntime
+import com.hinnka.mycamera.superres.SuperResSettingsSection
 
 private enum class SettingsPage {
     ASSIST,
@@ -311,17 +318,11 @@ private fun AppLanguageSetting() {
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(
-    viewModel: CameraViewModel,
-    onBack: () -> Unit,
-    onFilterManagementClick: () -> Unit,
-    onVideoFilterManagementClick: () -> Unit,
-    onFrameManagementClick: () -> Unit,
-    onPhantomPipCropClick: () -> Unit,
-    onPresetManagementClick: () -> Unit,
+    onSuperResSettingsClick: () -> Unit,
+    // ↓↓↓ uisettings：跳到独立的新页面「Pro 设置」（默认空实现，未接线时入口可见但点了没反应）
+    onProSettingsClick: () -> Unit = {},
     modifier: Modifier = Modifier
-) {
-    val state by viewModel.state.collectAsState()
+) {    val state by viewModel.state.collectAsState()
     val userPreferences by viewModel.userPreferences.collectAsState()
     val showLevelIndicator by viewModel.showLevelIndicator.collectAsState(initial = false)
     val focusPeakingEnabled by viewModel.focusPeakingEnabled.collectAsState(initial = true)
@@ -1899,8 +1900,53 @@ fun SettingsScreen(
                     }
                 }
 
-                SettingsPage.PHOTO_MODE -> {
-                    // 照片模式设置
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    SettingsSection(title = stringResource(R.string.le_section_title)) {
+                        // 说明：所有参数都在 LongExposureConfig 里带默认值 + 范围 + clamp，
+                        // 这里只暴露"最常调的 4 个"；其余（暗帧/预览/画笔色温）放在玩法页内联。
+                        NumberSettingItem(
+                            title = stringResource(R.string.le_param_frames),
+                            description = stringResource(R.string.le_param_frames_desc),
+                            initial = longExposureConfig.frameCount,
+                            range = LongExposureLimits.FRAME_MIN..LongExposureLimits.RECOMMENDED_FRAME_MAX,
+                            onCommit = { value ->
+                                updateData {
+                                    it[LongExposureConfig.KEY_FRAME_COUNT] = value
+                                }
+                            }
+                        )
+                        SwitchSettingItem(
+                            title = stringResource(R.string.le_param_preview),
+                            checked = longExposureConfig.previewEnabled,
+                            onCheckedChange = { on ->
+                                updateData { it[LongExposureConfig.KEY_PREVIEW] = on }
+                            }
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    SettingsSection(title = stringResource(R.string.astro_plan_section_title)) {
+                        // 纬度/经度/海拔/时区用自由输入；权重与阈值用 0..1 滑杆。
+                        // 值域全部由 AstroPlanConfig.clampWithReport() 兜底（UI 端可放宽）。
+                        NumberSettingItem(
+                            title = stringResource(R.string.astro_plan_moon_weight),
+                            initial = astroConfig.moonWeight,
+                            range = 0f..1f,
+                            onCommit = { v -> updateData { it[AstroPlanConfig.KEY_MOON_WEIGHT] = v } }
+                        )
+                        NumberSettingItem(
+                            title = stringResource(R.string.astro_plan_good_threshold),
+                            initial = astroConfig.goodScoreThreshold,
+                            range = 0f..1f,
+                            onCommit = { v -> updateData { it[AstroPlanConfig.KEY_GOOD_THRESHOLD] = v } }
+                        )
+                        // 计划器只读展示（纯计算，可直接调）：
+                        val preview = remember { AstroPlanner.plan(System.currentTimeMillis(), astroConfig) }
+                        Text(stringResource(R.string.astro_plan_moon_illumination) + "：" +
+                            AstroPlanner.moonIlluminationPercent(preview.moonIlluminationFraction).toString() + "%")
+                    }                    // 照片模式设置
                     SettingsSection(
                         title = stringResource(R.string.settings_section_photo_mode),
                         showTitle = false
@@ -1912,7 +1958,7 @@ fun SettingsScreen(
                             ),
                             value = jpgMultiFrameDenoiseCountSliderValue,
                             valueRange = MultiFrameConfig.MIN_DENOISE_FRAME_COUNT.toFloat()..
-                                MultiFrameConfig.MAX_FRAME_COUNT.toFloat(),
+                                MultiFrameConfig.frameCountLimit().toFloat(),
                             onValueChange = {
                                 jpgMultiFrameDenoiseCountSliderValue = it.roundToInt().toFloat()
                             },
@@ -2016,11 +2062,15 @@ fun SettingsScreen(
                 }
 
                 SettingsPage.PROFESSIONAL_MODE -> {
+                    // ↓↓↓ uisettings：统一专业设置入口（本模块唯一插入的既有页 UI）
+                    SettingsSection(title = "Pro 设置") {
+                        ProSettingsEntryItem(onClick = onProSettingsClick)
+                    }
+
                     // 专业模式使用 HDR+，融合模式决定是否支持包围曝光。
                     SettingsSection(
                         title = stringResource(R.string.settings_professional_group_max_hdr)
-                    ) {
-                        QualityLevelSetting(
+                    ) {                        QualityLevelSetting(
                             title = stringResource(R.string.settings_raw_max_spatial_mode),
                             description = stringResource(R.string.settings_raw_max_spatial_mode_description),
                             levels = listOf(
@@ -2047,7 +2097,7 @@ fun SettingsScreen(
                             } else {
                                 MultiFrameConfig.MIN_HDR_PLUS_FRAME_COUNT
                             }).toFloat()..
-                                MultiFrameConfig.MAX_FRAME_COUNT.toFloat(),
+                                MultiFrameConfig.frameCountLimit().toFloat(),
                             onValueChange = {
                                 hdrPlusFrameCountSliderValue = it.roundToInt().toFloat()
                             },
@@ -2664,6 +2714,22 @@ fun SettingsScreen(
                             description = stringResource(R.string.settings_preset_management_description),
                             onClick = onPresetManagementClick
                         )
+                        HorizontalDivider(
+                            color = Color.White.copy(alpha = 0.1f),
+                            modifier = Modifier.padding(vertical = 8.dp)
+                        )
+
+                        val superResContext = LocalContext.current
+                        val superResConfigStore = remember { SuperResConfigStore(superResContext) }
+                        val superResRuntime = remember { SuperResRuntime(superResContext) }
+                        val superResConfig by superResConfigStore.configFlow.collectAsState(
+                            initial = SuperResConfig()
+                        )
+                        SuperResSettingsSection(
+                            runtime = superResRuntime,
+                            initial = superResConfig,
+                            onOpenModelManager = onSuperResSettingsClick,
+                        )
                     }
                 }
 
@@ -2673,6 +2739,13 @@ fun SettingsScreen(
                         title = stringResource(R.string.ai_service),
                         showTitle = false
                     ) {
+                        AiPlatformSettingsSection()
+
+                        AiFeatureSettingsSection()
+
+                        AiLutDownloadSection()
+
+                        LutAiSettingsSection()
                         TextInputSettingItem(
                             title = stringResource(R.string.settings_openai_api_key),
                             description = stringResource(R.string.settings_openai_api_key_desc),

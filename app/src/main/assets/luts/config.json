@@ -81,6 +81,18 @@
       "isVip": false
     },
     {
+      "id": "log_restore_hlg",
+      "name": { "en": "HLG Restore (Rec.709)", "zh": "HLG 还原 (Rec.709)" },
+      "path": "log/log_restore_hlg.plut",
+      "category": "Log"
+    },
+    {
+      "id": "log_restore_logc3",
+      "name": { "en": "LogC3 Restore (Rec.709)", "zh": "LogC3 还原 (Rec.709)" },
+      "path": "log/log_restore_logc3.plut",
+      "category": "Log"
+    },
+    {
       "id": "leica_m9",
       "name": {
         "en": "M9 CCD",

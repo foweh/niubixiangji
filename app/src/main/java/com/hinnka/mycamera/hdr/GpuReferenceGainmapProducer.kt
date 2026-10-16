@@ -479,7 +479,7 @@ class GpuReferenceGainmapProducer : GainmapProducer {
 
     companion object {
         private const val TAG = "GpuReferenceGainmapProducer"
-        private const val RAW_DOWNSAMPLE = RawGainmapMath.DOWNSAMPLE
+        private val RAW_DOWNSAMPLE get() = RawGainmapMath.downsample()
         private const val RAW_MIN_GAIN_RATIO = RawGainmapMath.MIN_GAIN_RATIO
         private const val RAW_MAX_GAIN_RATIO = RawGainmapMath.MAX_GAIN_RATIO
         private const val EPSILON = RawGainmapMath.OFFSET

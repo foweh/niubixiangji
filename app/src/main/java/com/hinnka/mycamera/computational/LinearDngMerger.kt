@@ -52,6 +52,7 @@ object LinearDngMerger {
         frames: List<RawStackFrame>,
         whiteLevel: Int,
         sigmaClipSigma: Float = 2.0f,
+        job: BgJob? = null,
     ): LinearDngResult? {
         if (frames.isEmpty()) return null
         val first = frames[0].image
@@ -59,11 +60,26 @@ object LinearDngMerger {
         val h = first.height
         val count = w * h
 
+        // 内存守卫：超预算时**降级**（Bayer 同相抽样到 1/degrade 分辨率）而不是失败（PATTERN_SPEC §4）。
+        var degrade = 1
+        if (job != null) {
+            var estBytes = count.toLong() * 36L
+            while (!job.guardMemory(estBytes) && degrade < 8) {
+                degrade *= 2
+                estBytes /= 4L
+                PLog.w(TAG, "RAW merge over budget: degrade Bayer binning to 1/$degrade")
+            }
+        }
+        // 降级后的工作分辨率（Bayer 同相抽样，CFA 结构保持）。
+        val workW = (w / degrade).coerceAtLeast(1)
+        val workH = (h / degrade).coerceAtLeast(1)
+        val workCount = workW * workH
+
         // 每帧归一化后的贡献缓存（16-bit -> float）。为控内存，逐帧流式累加：
         // sum / sumSq / accepted 三通道（按 Bayer 位置分别统计以保留 CFA 结构）。
-        val sum = LongArray(count)
-        val sumSq = DoubleArray(count)
-        val accepted = IntArray(count)
+        val sum = LongArray(workCount)
+        val sumSq = DoubleArray(workCount)
+        val accepted = IntArray(workCount)
         var highlightRecovered = 0L
 
         // 归一化因子 = 1 / exposureProduct（hdrmerge 做法：按曝光乘积归一到相同辐照度）。
@@ -80,12 +96,12 @@ object LinearDngMerger {
             val pixStride = plane.pixelStride
             val buf = plane.buffer
             val scale = (norms[fi] / refNorm)
-            for (y in 0 until h) {
-                val rowBase = y * rowStride
-                for (x in 0 until w) {
-                    val p = y * w + x
-                    // RAW16 样本按 pixelStride 读 2 字节小端。
-                    val raw = buf.getShort(rowBase + x * pixStride).toInt().and(0xFFFF)
+            for (y in 0 until workH) {
+                val rowBase = y * degrade * rowStride
+                for (x in 0 until workW) {
+                    val p = y * workW + x
+                    // RAW16 样本按 pixelStride 读 2 字节小端（降级时按 1/degrade 同相抽样，保留 CFA 相位）。
+                    val raw = buf.getShort(rowBase + x * degrade * pixStride).toInt().and(0xFFFF)
                     var v = raw * scale
                     // 高光恢复：长曝帧此点 clipped，则该帧该点不计入（由未 clipped 的短曝帧提供）。
                     val clipped = raw >= whiteLevel
@@ -98,12 +114,13 @@ object LinearDngMerger {
                     accepted[p]++
                 }
             }
+            job?.let { it.report(fi + 1, frames.size); it.checkYield() }
         }
 
         // sigma-clip 第二遍：剔除偏离均值过远的样本（移动物体/卫星）。
         val mean = FloatArray(count)
         val std = FloatArray(count)
-        for (p in 0 until count) {
+        for (p in 0 until workCount) {
             val n = accepted[p]
             if (n > 0) {
                 val m = sum[p].toFloat() / n
@@ -120,11 +137,11 @@ object LinearDngMerger {
             val pixStride = plane.pixelStride
             val buf = plane.buffer
             val scale = (norms[fi] / refNorm)
-            for (y in 0 until h) {
-                val rowBase = y * rowStride
-                for (x in 0 until w) {
-                    val p = y * w + x
-                    val raw = buf.getShort(rowBase + x * pixStride).toInt().and(0xFFFF)
+            for (y in 0 until workH) {
+                val rowBase = y * degrade * rowStride
+                for (x in 0 until workW) {
+                    val p = y * workW + x
+                    val raw = buf.getShort(rowBase + x * degrade * pixStride).toInt().and(0xFFFF)
                     if (raw >= whiteLevel) continue
                     val v = raw * scale
                     val s = std[p]
@@ -136,24 +153,53 @@ object LinearDngMerger {
                     }
                 }
             }
+            job?.let { it.report(fi + 1, frames.size); it.checkYield() }
         }
 
-        val out = ByteArray(count * 2)
+        val out = ByteArray(workCount * 2)
         var o = 0
-        for (p in 0 until count) {
+        for (p in 0 until workCount) {
             val n = finalCount[p]
             val v = if (n > 0) finalSum[p] / n else mean[p]
             val clamped = v.toInt().coerceIn(0, 65535)
             out[o++] = (clamped and 0xFF).toByte()
             out[o++] = ((clamped shr 8) and 0xFF).toByte()
         }
-        PLog.i(TAG, "Linear DNG merge: ${frames.size} frames -> ${w}x$h recovered=$highlightRecovered")
+        PLog.i(
+            TAG,
+            "Linear DNG merge: ${frames.size} frames -> ${workW}x$workH (degrade=1/$degrade) " +
+                "recovered=$highlightRecovered"
+        )
         return LinearDngResult(
             cfaBuffer = ByteBuffer.wrap(out),
-            width = w,
-            height = h,
+            width = workW,
+            height = workH,
             mergedFrameCount = frames.size,
             highlightRecoveredPixels = highlightRecovered,
         )
+    }
+
+    /**
+     * 后台队列化的 RAW/DNG 合成入口（全局性能调度器，单消费者串行 + 内存守卫 + 可暂停/取消）。
+     *
+     * 与同步 [merge] 的关系：同一算法，只是放进 [BgJobRunner] 队列慢慢跑，不抢前台。
+     * 超内存预算时在任务内抛 [BgJobMemoryLimitException] → 任务标记 FAILED，回调 null。
+     */
+    fun mergeAsync(
+        frames: List<RawStackFrame>,
+        whiteLevel: Int,
+        sigmaClipSigma: Float = 2.0f,
+        displayName: String = "RAW Merge",
+        onResult: (LinearDngResult?) -> Unit,
+    ): BgJob = BgJobRunner.submit(
+        name = displayName,
+        chunkSize = 6,
+        type = BgTaskType.RAW_MERGE,
+        priority = BgJobPriority.NORMAL,
+    ) {
+        val result = runCatching { merge(frames, whiteLevel, sigmaClipSigma, this) }
+            .onFailure { PLog.w(TAG, "mergeAsync failed: ${it.message}") }
+            .getOrNull()
+        onResult(result)
     }
 }

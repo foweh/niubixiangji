@@ -1,0 +1,51 @@
+{
+  "ops_file": "aiplatform_a",
+  "dry_run": false,
+  "ok": 6,
+  "skip": 0,
+  "fail": 0,
+  "results": [
+    {
+      "i": 0,
+      "op": "x_insert_after",
+      "file": "app/src/main/AndroidManifest.xml",
+      "status": "OK",
+      "detail": "x_insert_after ×1 [exact] (delivery/patches/aiplatform_patch.md:77)"
+    },
+    {
+      "i": 1,
+      "op": "extract",
+      "file": "app/src/main/res/xml/network_security_config.xml",
+      "status": "OK",
+      "detail": "extract 523 bytes (delivery/patches/aiplatform_patch.md:86)"
+    },
+    {
+      "i": 2,
+      "op": "x_replace",
+      "file": "app/build.gradle.kts",
+      "status": "OK",
+      "detail": "x_replace ×1 [exact] (delivery/patches/aiplatform_patch.md:128)"
+    },
+    {
+      "i": 3,
+      "op": "x_insert_before",
+      "file": "app/src/main/res/values/strings.xml",
+      "status": "OK",
+      "detail": "x_insert_before ×1 [exact] (delivery/patches/aiplatform_patch.md:191)"
+    },
+    {
+      "i": 4,
+      "op": "x_insert_after",
+      "file": "app/src/main/java/com/hinnka/mycamera/ui/settings/SettingsScreen.kt",
+      "status": "OK",
+      "detail": "x_insert_after ×1 [exact] (delivery/patches/aiplatform_patch.md:288)"
+    },
+    {
+      "i": 5,
+      "op": "x_insert_before",
+      "file": "app/src/main/java/com/hinnka/mycamera/ui/settings/SettingsScreen.kt",
+      "status": "OK",
+      "detail": "x_insert_before ×1 [exact] (delivery/patches/aiplatform_patch.md:305)"
+    }
+  ]
+}

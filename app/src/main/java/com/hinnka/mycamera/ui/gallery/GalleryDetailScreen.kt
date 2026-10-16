@@ -79,6 +79,9 @@ import com.hinnka.mycamera.hdr.HdrGainmapStrength
 import com.hinnka.mycamera.lut.creator.AiPhotoCriterion
 import com.hinnka.mycamera.lut.creator.AiPhotoEvaluation
 import com.hinnka.mycamera.lut.isVideoTransformerExportSupported
+import com.hinnka.mycamera.lut.LutManager
+import com.hinnka.mycamera.lut.LutRecommendationBridge
+import com.hinnka.mycamera.lut.LutRecommenderConfig
 import com.hinnka.mycamera.lut.VideoExportOption
 import com.hinnka.mycamera.lut.VideoExportResolution
 import com.hinnka.mycamera.lut.VideoExportSupport
@@ -1297,6 +1300,31 @@ private fun AiScoreBottomSheet(
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var requestToken by remember(photo.id) { mutableIntStateOf(0) }
     var uiState by remember(photo.id) { mutableStateOf<AiEvaluationUiState>(AiEvaluationUiState.Loading) }
+    // === F2 生效路径（aiplatform_patch.md）：AI 评分时顺带跑一次 LUT 场景推荐 ===
+    val lutContext = LocalContext.current.applicationContext
+    var lutRecommendations by remember(photo.id) { mutableStateOf<List<String>>(emptyList()) }
+    LaunchedEffect(photo.id) {
+        val enabled = runCatching { LutRecommendationBridge.isEnabled(lutContext) }.getOrDefault(false)
+        if (!enabled) return@LaunchedEffect
+        val bitmap = runCatching {
+                viewModel.getPreviewBitmap(photo = photo, showOrigin = false, ignoreDenoise = true, maxEdge = 512)
+            }.getOrNull() ?: return@LaunchedEffect
+        runCatching {
+            LutRecommendationBridge.requestFor(
+                bitmap = bitmap,
+                lutManager = LutManager(lutContext),
+                config = LutRecommenderConfig.DEFAULT,
+                enabled = true,
+            ) { ids ->
+                lutRecommendations = ids
+                Toast.makeText(
+                    lutContext,
+                    if (ids.isEmpty()) "无可用 LUT 推荐" else "推荐 LUT：" + ids.joinToString(" / "),
+                    Toast.LENGTH_LONG,
+                ).show()
+            }
+        }
+    }
 
     val openAIKey by viewModel.openAIApiKey.collectAsState()
     val canEvaluate = isPurchased || !openAIKey.isNullOrBlank()
@@ -1842,7 +1870,7 @@ private fun HdrStrengthPanel(
                 CustomSlider(
                     value = strength,
                     onValueChange = onStrengthChange,
-                    valueRange = HdrGainmapStrength.MIN..HdrGainmapStrength.MAX,
+                                valueRange = HdrGainmapStrength.MIN..HdrGainmapStrength.maxStrength(),
                     enabled = enabled,
                     onValueChangeFinished = onStrengthChangeFinished,
                 )

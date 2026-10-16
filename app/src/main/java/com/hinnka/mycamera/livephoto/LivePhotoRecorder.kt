@@ -250,8 +250,22 @@ class LivePhotoRecorder(
             // Audio Record & Encoder
             initAudio()
 
-            lutRenderer = HardwareLutVideoRenderer(w, h, lutConfig, params).apply {
-                initialize(inputSurface!!, sharedContext, sharedDisplay)
+            // Log 档位下：片段像素已是 Log 编码 → 容器/传输特性标记必须同步为非显示域，
+            // 否则播放器会把 Log 灰片当 Rec.709 显示（画面发灰、对比度丢失）。
+            val logProfile = LogVideoConfigStore.current.takeIf { it.enabled }
+                ?.let { LogVideoLutDecision.resolveProfile(it, VideoLogProfile.entries.toList()) }
+                ?: VideoLogProfile.OFF
+            lutRenderer = HardwareLutVideoRenderer(
+                w, h, lutConfig, params,
+                encoderColorConfig = resolveVideoEncoderColorConfig(
+                    codecInfo = null,
+                    codecMime = MediaFormat.MIMETYPE_VIDEO_HEVC,
+                    request = VideoEncoderColorRequest(
+                        logProfile = logProfile,
+                        hasActiveLut = lutConfig != null && params?.isDefault() == false,
+                    ),
+                ),
+            ).apply {                initialize(inputSurface!!, sharedContext, sharedDisplay)
             }
 
             startDraining()
@@ -438,6 +452,34 @@ class LivePhotoRecorder(
      * 触发快照 (拍照时调用)
      */
     fun snapshot(): Long? {
+        val plan = LogLivePhotoIntegrator.plan(
+            config = LogVideoConfigStore.current,
+            profile = profile,
+            isLivePhotoEnabled = true,
+            lutAvailable = lutConfig != null,
+            stillFrameSizeBytes = width.toLong() * height * 4L,
+        )
+        val table = ActiveLogCurveTable.current(plan.stillCurve ?: LogCurveRecipe.DEFAULT)
+        if (plan.needsStillFrameJob && LogLivePhotoIntegrator.shouldUseBackgroundJob(width * height)) {
+            BgJobRunner.submit(
+                name = "LogLivePhotoStill",
+                chunkSize = LogVideoFrameProcessor.DEFAULT_CHUNK_ROWS,
+                type = BgTaskType.AI_LUT,
+                priority = BgJobPriority.LOW,
+            ) { job ->
+                LogVideoFrameProcessor.encodeArgbInPlace(
+                    pixels = pixels, width = width, height = height,
+                    table = table,
+                    sink = object : LogFrameJobSink {
+                        override val isCancelled get() = job.isCancelled
+                        override fun report(done: Int, total: Int) = job.report(done, total)
+                        override fun checkYield() = job.checkYield()
+                    },
+                )
+            }
+        } else {
+            LogVideoFrameProcessor.encodeArgbInPlace(pixels, width, height, table)
+        }
         if (!isRunning) return null
 
         // 使用最近一帧的时间戳作为基准，避免时钟源不一致问题

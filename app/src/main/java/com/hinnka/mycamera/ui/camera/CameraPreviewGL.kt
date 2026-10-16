@@ -26,6 +26,10 @@ import com.hinnka.mycamera.raw.RawEnginePreviewPlan
 import kotlinx.coroutines.flow.StateFlow
 import com.hinnka.mycamera.model.ColorRecipeParams
 import com.hinnka.mycamera.preview.EyeFocusPreviewFrame
+import com.hinnka.mycamera.logvideo.LogVideoConfig
+import com.hinnka.mycamera.logvideo.LogVideoLayerFactory
+import com.hinnka.mycamera.viewfinder.PeakingEnhanceConfig
+import com.hinnka.mycamera.viewfinder.ZebraConfig
 import com.hinnka.mycamera.stabilization.DEFAULT_VIDEO_STABILIZATION_LOOKAHEAD
 import com.hinnka.mycamera.stabilization.RealtimeStabilizationCoordinator
 import com.hinnka.mycamera.stabilization.StabilizationUseCase
@@ -77,10 +81,16 @@ fun CameraPreviewGL(
     onFirstPreviewFrame: (() -> Unit)? = null,
     livePhotoRecorder: LivePhotoRecorder? = null,
     videoLogProfile: VideoLogProfile = VideoLogProfile.OFF,
+    /** Log 视频配置（Log 曲线微调下发的来源；默认值 → trim 恒等，不改变既有画面）。 */
+    logVideoConfig: LogVideoConfig = LogVideoConfig(),
     isEyeFocusBusy: Boolean = false,
     onGLSurfaceViewReady: ((CameraGLSurfaceView) -> Unit)? = null,
     isAutoFocus: Boolean = true,
     focusPeakingEnabled: Boolean = true,
+    zebraConfig: ZebraConfig = ZebraConfig(),
+    peakingEnhance: PeakingEnhanceConfig = PeakingEnhanceConfig(),
+    peakingEnhancedEnabled: Boolean = false,
+    onViewfinderInputAvailable: ((EyeFocusPreviewFrame) -> Unit)? = null,
     stabilizationCoordinator: RealtimeStabilizationCoordinator? = null,
     stabilizationInputSize: Size = previewSize,
     photoPreviewStabilizationEnabled: Boolean = false,
@@ -233,6 +243,7 @@ fun CameraPreviewGL(
                         glSurfaceView.onMeteringUpdated = { w, l -> onMeteringUpdated?.invoke(w, l) }
                         glSurfaceView.onHighlightPointUpdated = { hx, hy -> onHighlightPointUpdated?.invoke(hx, hy) }
                         glSurfaceView.onEyeFocusInputAvailable = onEyeFocusInputAvailable
+                        glSurfaceView.onViewfinderInputAvailable = onViewfinderInputAvailable
                         glSurfaceView.onFirstPreviewFrame = {
                             if (glSurfaceViewRef === glSurfaceView) {
                                 onFirstPreviewFrame?.invoke()
@@ -330,8 +341,11 @@ fun CameraPreviewGL(
                         glSurfaceView.setMeteringMode(meteringMode)
                         glSurfaceView.setLivePhotoRecorder(livePhotoRecorder)
                         glSurfaceView.setVideoLogProfile(videoLogProfile)
+                        glSurfaceView.setLogCurveTrim(LogVideoLayerFactory.trim(logVideoConfig))
                         glSurfaceView.setAutoFocus(isAutoFocus)
                         glSurfaceView.setFocusPeakingEnabled(focusPeakingEnabled)
+                        glSurfaceView.setViewfinderZebra(zebraConfig)
+                        glSurfaceView.setViewfinderPeaking(peakingEnhance, peakingEnhancedEnabled)
                         glSurfaceView.setEyeFocusBusy(isEyeFocusBusy)
                     },
                     modifier = Modifier.fillMaxSize()

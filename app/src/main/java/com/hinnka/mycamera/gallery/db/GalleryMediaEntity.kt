@@ -170,3 +170,15 @@ data class GalleryMediaEntity(
     val spectralFilmMDensityGain: Float,
     val spectralFilmYDensityGain: Float
 )
+    val spectralFilmYDensityGain: Float,
+
+    // ── 应用内置独立相册（appgallery）扩展列；全部可空，旧数据为 NULL ──
+    /** 产物分类名（`AppGalleryCategory` 的枚举名或中文标签）；NULL = 由相册域回退归类。 */
+    val processingType: String? = null,
+    /** 产物所在目录标记（目录名），用于「超分 / 堆栈 / 星轨」等目录规则。 */
+    val relativeDirTag: String? = null,
+    /** 感知哈希（16 进制，8/16 位宽由长度推断）。 */
+    val phashHex: String? = null,
+    /** 感知哈希写入时间（毫秒，用于失效重算）。 */
+    val phashUpdatedAt: Long? = null
+)

@@ -3,6 +3,7 @@ package com.hinnka.mycamera.ml
 import android.content.Context
 import android.net.Uri
 import com.hinnka.mycamera.utils.PLog
+import com.hinnka.mycamera.net.HttpDownloadSpec
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
@@ -273,6 +274,21 @@ object DepthModelManager {
     }
 
     private fun downloadArchive(target: File) {
+        // I19/I21 最小改动（aiplatform_patch.md）：走统一下载规格（超时/重试/续传/类型校验）。
+        // 若统一路径成功则直接返回；失败再落回原有实现（既有 SHA-256 校验与进度上报完全不动）。
+        val specUrl = runCatching { java.net.URL(MODEL_DOWNLOAD_URL) }.getOrNull()
+        if (specUrl != null) {
+            val spec = HttpDownloadSpec.clamp(
+                HttpDownloadSpec(
+                    connectTimeoutMs = 15_000,
+                    readTimeoutMs = 300_000,
+                    maxRetries = 3,
+                    resume = true,
+                    expectedContentTypes = listOf("application/zip", "application/octet-stream"),
+                )
+            )
+            if (spec.downloadWithRetry(specUrl, target) && target.length() > 0L) return
+        }
         val request = Request.Builder()
             .url(MODEL_DOWNLOAD_URL)
             .get()

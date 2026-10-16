@@ -8,7 +8,7 @@ import com.hinnka.mycamera.raw.RawToneMappingParameters
 
 @Database(
     entities = [GalleryMediaEntity::class],
-    version = 50,
+    version = 51,
     exportSchema = false
 )
 @androidx.room.TypeConverters(GalleryConverters::class)
@@ -871,6 +871,25 @@ abstract class GalleryDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * 应用内置独立相册（appgallery）扩展列。
+         *
+         * 四列全部**可空**，旧数据保持 NULL，由相册域在读取时回退归类（默认「普通照片」）：
+         * - `processingType`：产物分类名（`AppGalleryCategory.name` 或其中文标签）；
+         * - `relativeDirTag`：产物所在目录标记（`superres` / `stack` / `astro` …）；
+         * - `phashHex` / `phashUpdatedAt`：感知哈希缓存（可空，未写不影响重复检测，仅每次重算）。
+         *
+         * 注：`ADD COLUMN` 追加列位于表末尾，与 [GalleryMediaEntity] 里这四列的声明顺序一致；
+         * 租户里的 `customProperties` 列**已存在**，是同语义信息的另一条通道（见 §7），无需迁移。
+         */
+        private val MIGRATION_50_51 = object : androidx.room.migration.Migration(50, 51) {
+            override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE gallery_media ADD COLUMN processingType TEXT")
+                db.execSQL("ALTER TABLE gallery_media ADD COLUMN relativeDirTag TEXT")
+                db.execSQL("ALTER TABLE gallery_media ADD COLUMN phashHex TEXT")
+                db.execSQL("ALTER TABLE gallery_media ADD COLUMN phashUpdatedAt INTEGER")
+            }
+        }
         fun getInstance(context: Context): GalleryDatabase {
             return INSTANCE ?: synchronized(this) {
                 INSTANCE ?: Room.databaseBuilder(
@@ -927,7 +946,8 @@ abstract class GalleryDatabase : RoomDatabase() {
                         MIGRATION_46_47,
                         MIGRATION_47_48,
                         MIGRATION_48_49,
-                        MIGRATION_49_50
+                        MIGRATION_49_50,
+                        MIGRATION_50_51
                     )
                     .fallbackToDestructiveMigrationOnDowngrade(false)
                     .fallbackToDestructiveMigration(false)

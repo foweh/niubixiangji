@@ -31,6 +31,17 @@ interface GalleryMediaDao {
     @Delete
     suspend fun delete(entity: GalleryMediaEntity)
 
+    @Query("SELECT processingType FROM gallery_media WHERE id = :id LIMIT 1")
+    suspend fun processingTypeOf(id: String): String?
+
+    @Query("SELECT relativeDirTag FROM gallery_media WHERE id = :id LIMIT 1")
+    suspend fun relativeDirTagOf(id: String): String?
+
+    @Query("SELECT id FROM gallery_media WHERE processingType = :type")
+    suspend fun idsByProcessingType(type: String): List<String>
+
+    @Query("SELECT id, phashHex FROM gallery_media WHERE phashHex IS NOT NULL AND phashUpdatedAt >= :since")
+    suspend fun phashEntriesSince(since: Long): List<PhashRow>
     @Query("DELETE FROM gallery_media WHERE id = :id")
     suspend fun deleteById(id: String)
 }

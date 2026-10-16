@@ -9,6 +9,7 @@ import android.os.SystemClock
 import com.hinnka.mycamera.livephoto.LivePhotoRecorder
 import com.hinnka.mycamera.livephoto.resolveLivePhotoRotationDegrees
 import com.hinnka.mycamera.preview.EyeFocusPreviewFrame
+import com.hinnka.mycamera.logvideo.LogCurveTrim
 import com.hinnka.mycamera.preview.EyeFocusProcessingTiming
 import com.hinnka.mycamera.raw.ColorSpace
 import com.hinnka.mycamera.screencapture.PhantomPipCrop
@@ -31,6 +32,9 @@ import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 import kotlin.math.abs
 import kotlin.math.hypot
+import com.hinnka.mycamera.viewfinder.PeakingEnhanceConfig
+import com.hinnka.mycamera.viewfinder.ViewfinderGlOverlay
+import com.hinnka.mycamera.viewfinder.ZebraConfig
 
 /**
  * LUT 渲染器
@@ -211,6 +215,31 @@ class LutRenderer(context: Context) : GLSurfaceView.Renderer {
     private var focusPeakingFboWidth: Int = 0
     private var focusPeakingFboHeight: Int = 0
 
+    // 取景器辅助叠加（斑马纹 + 峰值对焦强化）；着色器与 FBO 由 ViewfinderGlOverlay 自持
+    private val viewfinderOverlay = ViewfinderGlOverlay()
+
+    /** 斑马纹配置（写入即 clamp；enable 变化无需重建 GL 资源）。 */
+    var zebraConfig: ZebraConfig = ZebraConfig()
+        set(value) {
+            field = ZebraConfig.clamp(value).value
+            viewfinderOverlay.updateZebraConfig(field)
+        }
+
+    /** 峰值对焦强化配置（写入即 clamp）。 */
+    var peakingConfig: PeakingEnhanceConfig = PeakingEnhanceConfig()
+        set(value) {
+            field = PeakingEnhanceConfig.clamp(value).value
+            viewfinderOverlay.updatePeakingConfig(field)
+        }
+
+    /**
+     * 峰值对焦是否走**增强着色器**（可调灵敏度/阈值/颜色/混合/步长）。
+     * false = 沿用既有 `renderFocusPeaking` 硬编码实现（阈值 0.8 / 颜色 1,0.1,0.1）。
+     * 两者默认观感一致（灵敏度 0.5 → 阈值 0.80），因此开启不会造成回归。
+     */
+    @Volatile
+    var peakingEnhancedEnabled: Boolean = false
+
     // SurfaceTexture 变换矩阵
     private val stMatrix = FloatArray(16).apply { Matrix.setIdentityM(this, 0) }
     private val mgcEisPresentationTransform = MgcEisPresentationTransform()
@@ -269,6 +298,17 @@ class LutRenderer(context: Context) : GLSurfaceView.Renderer {
     @Volatile
     var onEyeFocusInputAvailable: ((EyeFocusPreviewFrame) -> Unit)? = null
 
+    /** 取景器辅助（实时直方图 / AR 贴纸）取帧回调；复用 EyeFocusPreviewFrame 类型，不新增数据类型。 */
+    var onViewfinderInputAvailable: ((EyeFocusPreviewFrame) -> Unit)? = null
+
+    /** 上一帧取景器采样是否仍在消费中（避免堆积）。 */
+    @Volatile
+    var isViewfinderSampleBusy: Boolean = false
+
+    /** 取景器采样间隔（纳秒），默认 100ms；实际显示频率由 ViewfinderOverlayController 再节流。 */
+    @Volatile
+    var viewfinderSampleIntervalNanos: Long = 100_000_000L
+
     private val eyeFocusTimingLock = Any()
     @Volatile
     private var eyeFocusSampleIntervalNanos = EYE_FOCUS_INITIAL_SAMPLE_INTERVAL_NS
@@ -277,6 +317,7 @@ class LutRenderer(context: Context) : GLSurfaceView.Renderer {
     private var eyeFocusEndToEndDurationEmaNanos = 0.0
     private var lastEyeFocusTimingLogElapsedMs = 0L
     private var lastEyeFocusSampleTimeNanos = 0L
+    private var lastViewfinderSampleTimeNanos = 0L
 
     fun updateEyeFocusTiming(timing: EyeFocusProcessingTiming) {
         if (
@@ -499,6 +540,21 @@ class LutRenderer(context: Context) : GLSurfaceView.Renderer {
     var livePhotoRecorder: LivePhotoRecorder? = null
     @Volatile
     var videoLogProfile: VideoLogProfile = VideoLogProfile.OFF
+    /**
+     * Log 曲线微调缓存（黑电平 / 斜率 / 峰值）。
+     *
+     * 集成说明（logvideo_patch.md Hook 7.3）：补丁给的是含省略号的伪代码，
+     * GLSL（`uVideoLogBlack/Slope/Peak` 三个 uniform 的声明 + `applyLutCurve` 之后的应用点）
+     * 未给出可直接落盘的实现，因此本处只落「缓存 + setter」，**不写入任何 uniform**，
+     * 行为恒等（IDENTITY = 0/1/1）。GLSL 侧落地后在此补 glUniform1f 下发即可。
+     */
+    @Volatile
+    var logCurveTrim: LogCurveTrim = LogCurveTrim.IDENTITY
+
+    /** 设置 Log 曲线微调（当前仅缓存；GLSL 下发见上）。 */
+    fun updateLogCurveTrim(trim: LogCurveTrim) {
+        logCurveTrim = trim
+    }
 
     // 预览帧捕获请求仅在 GL 线程中写入和消费。
     private val pendingPreviewCaptureRequests = ArrayDeque<PreviewCaptureRequest>()
@@ -514,6 +570,9 @@ class LutRenderer(context: Context) : GLSurfaceView.Renderer {
      * Surface 创建时调用
      */
     override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
+        // 上下文重建后把当前配置推给取景器叠加层（GL 资源在其内部按需重建）
+        viewfinderOverlay.updateZebraConfig(zebraConfig)
+        viewfinderOverlay.updatePeakingConfig(peakingConfig)
         PLog.d(TAG, "onSurfaceCreated")
 
         // Context lost or new, reset all resource IDs and cached state
@@ -645,6 +704,7 @@ class LutRenderer(context: Context) : GLSurfaceView.Renderer {
         focusPeakingTextureId = 0
         focusPeakingFboWidth = 0
         focusPeakingFboHeight = 0
+        viewfinderOverlay.resetAfterContextLoss()
         lastCaptureWidth = 0
         lastCaptureHeight = 0
         viewportWidth = 0
@@ -1061,6 +1121,7 @@ class LutRenderer(context: Context) : GLSurfaceView.Renderer {
         val filmGrainEnabled = filmGrain > 0.001f && !preLogFilmGrainEnabled
         val postProcessEffectEnabled = hdfEnabled || halationEnabled || bloomEnabled || softLightEnabled
         val eyeFocusSamplingNeeded = onEyeFocusInputAvailable != null && !isEyeFocusBusy
+        val viewfinderSamplingNeeded = onViewfinderInputAvailable != null && !isViewfinderSampleBusy
         val suppressBaselineLayerForVideoLog = videoLogProfile.isEnabled
         val hasBaselineLayer = hasBaselineLayer() && !suppressBaselineLayerForVideoLog
         val hasCreativeLayer = hasCreativeLayer()
@@ -1071,6 +1132,7 @@ class LutRenderer(context: Context) : GLSurfaceView.Renderer {
             clarityEnabled ||
             filmGrainEnabled ||
             eyeFocusSamplingNeeded ||
+            viewfinderSamplingNeeded ||
             hasDualLayer ||
             (!isAutoFocus && focusPeakingEnabled)
         if (requestedFbo && !isMainFboReady(viewportWidth, viewportHeight)) {
@@ -1200,9 +1262,32 @@ class LutRenderer(context: Context) : GLSurfaceView.Renderer {
 
             // 峰值对焦仅作用于预览，不进入录制
             if (!isAutoFocus && focusPeakingEnabled) {
-                currentTexId = renderFocusPeaking(currentTexId, currentWidth, currentHeight)
+                currentTexId = if (peakingEnhancedEnabled) {
+                    viewfinderOverlay.renderPeakingEnhanced(
+                        currentTexId,
+                        currentWidth,
+                        currentHeight,
+                        vertexBufferId,      // 复用既有全屏四边形 VBO，不新建几何
+                        texCoordBufferId,
+                        indexBufferId,
+                    )
+                } else {
+                    renderFocusPeaking(currentTexId, currentWidth, currentHeight)
+                }
             }
 
+            // 斑马纹过曝提示：叠在预览链路**最末端**（同样不进入录制），
+            // 顺序放在峰值之后，避免斑马纹色块被 Sobel 当成边缘（假峰值）。
+            if (zebraConfig.enabled && viewfinderOverlay.zebraActive) {
+                currentTexId = viewfinderOverlay.renderZebra(
+                    currentTexId,
+                    currentWidth,
+                    currentHeight,
+                    vertexBufferId,
+                    texCoordBufferId,
+                    indexBufferId,
+                )
+            }
             // 显示到屏幕
             if (postProcessEffectEnabled && !postProcessMaterialized) {
                 drawPostProcessEffects(0, viewportWidth, viewportHeight, currentTexId)
@@ -1238,6 +1323,32 @@ class LutRenderer(context: Context) : GLSurfaceView.Renderer {
                                     (SystemClock.elapsedRealtimeNanos() - sampleTimeNanos)
                                         .coerceAtLeast(0L),
                             )
+                        )
+                    }
+                }
+            }
+            // 取景器辅助取帧（直方图 / AR 贴纸）：与眼睛对焦同样取 **Original**（未套 LUT）帧，
+            // 避免极端色彩配方污染直方图统计与人脸关键点置信度。
+            if (cameraFrameUpdated && viewfinderSamplingNeeded &&
+                sampleTimeNanos - lastViewfinderSampleTimeNanos >= viewfinderSampleIntervalNanos
+            ) {
+                lastViewfinderSampleTimeNanos = sampleTimeNanos
+                capturePreviewFrame(
+                    maxLongEdge = EYE_FOCUS_SAMPLE_MAX_LONG_EDGE,
+                    source = PreviewCaptureSource.Original,
+                ) { bitmap ->
+                    val callback = onViewfinderInputAvailable
+                    if (callback == null) {
+                        bitmap.recycle()
+                    } else {
+                        isViewfinderSampleBusy = true
+                        callback(
+                            EyeFocusPreviewFrame(
+                                bitmap = bitmap,
+                                sampleStartedAtNanos = sampleTimeNanos,
+                                captureDurationNanos = (SystemClock.elapsedRealtimeNanos() - sampleTimeNanos)
+                                    .coerceAtLeast(0L),
+                            ),
                         )
                     }
                 }
@@ -3126,6 +3237,7 @@ class LutRenderer(context: Context) : GLSurfaceView.Renderer {
      * 释放资源
      */
     fun release() {
+        viewfinderOverlay.release()
         stabilizationSession?.stop()
         stabilizationSession = null
         stabilizationCoordinator = null

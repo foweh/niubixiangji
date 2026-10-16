@@ -108,7 +108,11 @@ enum class VideoLogProfile(
     V_LOG("V-Log", TransferCurve.VLOG, ColorSpace.VGamut),
     LOGC4_ARRI4("LogC4", TransferCurve.LOGC4, ColorSpace.ARRI4),
     LOG3G10_RED("Log3G10", TransferCurve.LOG3G10, ColorSpace.RED),
-    LLOG_BT2020("L-Log", TransferCurve.LLOG, ColorSpace.BT2020);
+    LLOG_BT2020("L-Log", TransferCurve.LLOG, ColorSpace.BT2020),
+    /** HLG（BT.2100）：本模块主推档位之一，`TransferCurve.HLG` 已存在，仅补档位映射。 */
+    HLG_BT2020("HLG", TransferCurve.HLG, ColorSpace.BT2020),
+    /** ARRI LogC3 + AWG3：依赖上方 `TransferCurve.LOGC3` / `ColorSpace.ARRI3` 同步追加。 */
+    LOGC3_ARRI3("LogC3", TransferCurve.LOGC3, ColorSpace.ARRI3);
 
     val isEnabled: Boolean
         get() = this != OFF

@@ -541,6 +541,8 @@ class UserPreferencesRepository(private val context: Context) {
         private val VIDEO_LENS_LOCK_ENABLED = booleanPreferencesKey("video_lens_lock_enabled")
         private val VIDEO_WHITE_BALANCE_LOCK_ENABLED = booleanPreferencesKey("video_white_balance_lock_enabled")
         private val VIDEO_CODEC = stringPreferencesKey("video_codec")
+        // videomodes：视频模式扩展的全部开放参数（单键 JSON，键名清单见 VideoModesConfig.toMap()）。
+        private val VIDEO_MODES_CONFIG = stringPreferencesKey("video_modes_config")
         // Keep the persisted key for compatibility with existing installations.
         private val ULTRA_HDR_GAIN_MAP_ENABLED = booleanPreferencesKey("auto_enable_hdr_for_hdr_capture")
         private val PHANTOM_MODE = booleanPreferencesKey("phantom_mode")
@@ -809,7 +811,8 @@ class UserPreferencesRepository(private val context: Context) {
                     }
                     ?: MultiFrameConfig.DEFAULT_SUPER_RESOLUTION_SCALE,
                 useMultipleExposure = preferences[USE_MULTIPLE_EXPOSURE] ?: false,
-                multipleExposureCount = preferences[MULTIPLE_EXPOSURE_COUNT] ?: 2,
+                multipleExposureCount = (preferences[MULTIPLE_EXPOSURE_COUNT] ?: 2)
+                    .coerceIn(2, MultipleExposureLimits.MAX_FRAMES),
                 rawMaxQualityTuningEnabled = preferences[RAW_MAX_QUALITY_TUNING_ENABLED]
                     ?: PhotonSensorSizeTuning.DEFAULT_RAW_MAX_QUALITY_TUNING_ENABLED,
                 useRawMax = useRawMax,

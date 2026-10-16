@@ -29,6 +29,7 @@ import com.hinnka.mycamera.ui.theme.AccentColor
 import com.hinnka.mycamera.R
 import com.hinnka.mycamera.camera.CameraState
 import com.hinnka.mycamera.camera.CameraUtils
+import com.hinnka.mycamera.aiwb.AiWhiteBalanceAnalyzer
 import com.hinnka.mycamera.video.CaptureMode
 import kotlin.math.roundToLong
 
@@ -97,8 +98,12 @@ internal fun cameraParameterItems(state: CameraState): List<CameraParameterItem>
         CameraParameterItem(
             CameraParameter.WHITE_BALANCE,
             stringResource(R.string.camera_parameter_white_balance),
-            if (showValues) formatWhiteBalanceValue(state) else null,
-            isEnabled = state.canAdjustWhiteBalance || state.actualAwbTemperature != null
+            if (showValues) {
+                // AI 白平衡建议值（aiplatform_patch.md）：仅在启用且已估计出结果时显示，
+                // 不改变任何捕获参数 —— 写回捕获请求需用户在设置页显式开启。
+                AiWhiteBalanceAnalyzer.lastEstimate?.kelvin?.let { "AI ${it}K" }
+                    ?: formatWhiteBalanceValue(state)
+            } else null,            isEnabled = state.canAdjustWhiteBalance || state.actualAwbTemperature != null
         )
     )
 }

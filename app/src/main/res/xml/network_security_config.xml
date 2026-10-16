@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- 默认：仅允许 https（AI 平台层默认拒绝明文 http，自部署如需 http 见 NOTES） -->
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+    <!-- 自部署示例：仅对你自己的域名放行明文 http，放开时把 domain 改成你的服务器地址 -->
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="true">camera-api.hinnka.me</domain>
+    </domain-config>
+</network-security-config>

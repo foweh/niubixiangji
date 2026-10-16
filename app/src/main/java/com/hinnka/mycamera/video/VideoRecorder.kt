@@ -6,6 +6,7 @@ import android.content.pm.PackageManager
 import android.hardware.camera2.CameraCharacteristics
 import android.media.AudioFormat
 import android.media.AudioManager
+import com.hinnka.mycamera.videomodes.VideoEncodePolicy
 import android.media.AudioRecord
 import android.media.AudioTimestamp
 import android.media.MediaCodec
@@ -410,7 +411,10 @@ class VideoRecorder(
         if (videoEncoder != null && inputSurface != null) return
         val width = requestedSize.width
         val height = requestedSize.height
-        val videoBitrate = (requestedBitrateMbps * 1_000_000).coerceIn(2_000_000, 300_000_000)
+        // videomodes §14 + review P1 合并：输入侧开放 1~200Mbps（clampBitrateMbps），
+        // 上界仍由 VideoBitrateLimits.maxBps() 兜底（相对 review 版本，上界语义未变）。
+        val videoBitrate = (VideoEncodePolicy.clampBitrateMbps(requestedBitrateMbps) * 1_000_000)
+            .coerceIn(2_000_000, VideoBitrateLimits.maxBps())
 
         videoEncoder = MediaCodec.createEncoderByType(requestedCodecMime).apply {
             val capabilities = codecInfo.getCapabilitiesForType(requestedCodecMime)
@@ -1494,4 +1498,12 @@ private fun Int.align16(): Int {
 private fun normalizeOrientationHint(degrees: Int): Int {
     val normalized = ((degrees % 360) + 360) % 360
     return (normalized / 90) * 90
+}
+
+
+/** 视频比特率开放上限（默认 300Mbps 保持既有行为）。 */
+object VideoBitrateLimits {
+    const val DEFAULT_MAX_BPS = 300_000_000L
+    @Volatile var userMaxBps: Long = DEFAULT_MAX_BPS
+    fun maxBps(): Long = userMaxBps.coerceIn(2_000_000L, 2_000_000_000L)
 }

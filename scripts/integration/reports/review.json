@@ -1,0 +1,170 @@
+{
+  "ops_file": "review",
+  "dry_run": false,
+  "ok": 23,
+  "skip": 0,
+  "fail": 0,
+  "results": [
+    {
+      "i": 0,
+      "op": "insert_after",
+      "file": "app/src/main/java/com/hinnka/mycamera/camera/MultiFrameConfig.kt",
+      "status": "OK",
+      "detail": "insert_after ×1 [exact]"
+    },
+    {
+      "i": 1,
+      "op": "replace",
+      "file": "app/src/main/java/com/hinnka/mycamera/camera/MultiFrameConfig.kt",
+      "status": "OK",
+      "detail": "replace ×1 [exact]"
+    },
+    {
+      "i": 2,
+      "op": "replace",
+      "file": "app/src/main/java/com/hinnka/mycamera/camera/MultiFrameConfig.kt",
+      "status": "OK",
+      "detail": "replace ×1 [exact]"
+    },
+    {
+      "i": 3,
+      "op": "replace",
+      "file": "app/src/main/java/com/hinnka/mycamera/camera/MultiFrameConfig.kt",
+      "status": "OK",
+      "detail": "replace ×1 [exact]"
+    },
+    {
+      "i": 4,
+      "op": "insert_after",
+      "file": "app/src/main/java/com/hinnka/mycamera/camera/MultiFrameConfig.kt",
+      "status": "OK",
+      "detail": "insert_after ×1 [exact]"
+    },
+    {
+      "i": 5,
+      "op": "insert_after",
+      "file": "app/src/main/java/com/hinnka/mycamera/camera/MultiFrameConfig.kt",
+      "status": "OK",
+      "detail": "insert_after ×1 [exact]"
+    },
+    {
+      "i": 6,
+      "op": "insert_after",
+      "file": "app/src/main/java/com/hinnka/mycamera/camera/MultiFrameConfig.kt",
+      "status": "OK",
+      "detail": "insert_after ×1 [exact]"
+    },
+    {
+      "i": 7,
+      "op": "insert_after",
+      "file": "app/src/main/java/com/hinnka/mycamera/camera/MultiFrameConfig.kt",
+      "status": "OK",
+      "detail": "insert_after ×1 [exact]"
+    },
+    {
+      "i": 8,
+      "op": "insert_after",
+      "file": "app/src/main/java/com/hinnka/mycamera/camera/MultiFrameConfig.kt",
+      "status": "OK",
+      "detail": "insert_after ×1 [exact]"
+    },
+    {
+      "i": 9,
+      "op": "insert_after",
+      "file": "app/src/main/java/com/hinnka/mycamera/camera/MultiFrameConfig.kt",
+      "status": "OK",
+      "detail": "insert_after ×1 [exact]"
+    },
+    {
+      "i": 10,
+      "op": "replace",
+      "file": "app/src/main/java/com/hinnka/mycamera/camera/MultiFrameConfig.kt",
+      "status": "OK",
+      "detail": "replace ×1 [exact]"
+    },
+    {
+      "i": 11,
+      "op": "replace",
+      "file": "app/src/main/java/com/hinnka/mycamera/camera/MultiFrameConfig.kt",
+      "status": "OK",
+      "detail": "replace ×1 [exact]"
+    },
+    {
+      "i": 12,
+      "op": "replace",
+      "file": "app/src/main/java/com/hinnka/mycamera/viewmodel/CameraViewModel.kt",
+      "status": "OK",
+      "detail": "replace ×1 [exact]"
+    },
+    {
+      "i": 13,
+      "op": "replace",
+      "file": "app/src/main/java/com/hinnka/mycamera/viewmodel/CameraViewModel.kt",
+      "status": "OK",
+      "detail": "replace ×1 [exact]"
+    },
+    {
+      "i": 14,
+      "op": "insert_after",
+      "file": "app/src/main/java/com/hinnka/mycamera/viewmodel/CameraViewModel.kt",
+      "status": "OK",
+      "detail": "insert_after ×1 [exact]"
+    },
+    {
+      "i": 15,
+      "op": "replace",
+      "file": "app/src/main/java/com/hinnka/mycamera/viewmodel/CameraViewModel.kt",
+      "status": "OK",
+      "detail": "replace ×1 [exact]"
+    },
+    {
+      "i": 16,
+      "op": "append",
+      "file": "app/src/main/java/com/hinnka/mycamera/viewmodel/CameraViewModel.kt",
+      "status": "OK",
+      "detail": "append 229 bytes"
+    },
+    {
+      "i": 17,
+      "op": "replace",
+      "file": "app/src/main/java/com/hinnka/mycamera/data/UserPreferencesRepository.kt",
+      "status": "OK",
+      "detail": "replace ×1 [exact]"
+    },
+    {
+      "i": 18,
+      "op": "replace",
+      "file": "app/src/main/java/com/hinnka/mycamera/ui/settings/SettingsScreen.kt",
+      "status": "OK",
+      "detail": "replace ×2 [exact]"
+    },
+    {
+      "i": 19,
+      "op": "replace",
+      "file": "app/src/main/java/com/hinnka/mycamera/data/DeviceConfiguration.kt",
+      "status": "OK",
+      "detail": "replace ×1 [exact]"
+    },
+    {
+      "i": 20,
+      "op": "insert_after",
+      "file": "app/src/main/java/com/hinnka/mycamera/ui/camera/ComputationalSceneBar.kt",
+      "status": "OK",
+      "detail": "insert_after ×1 [exact]"
+    },
+    {
+      "i": 21,
+      "op": "replace",
+      "file": "app/src/main/java/com/hinnka/mycamera/ui/camera/ComputationalSceneBar.kt",
+      "status": "OK",
+      "detail": "replace ×1 [exact]"
+    },
+    {
+      "i": 22,
+      "op": "create",
+      "file": "app/src/main/java/com/hinnka/mycamera/processor/ComputationalStackRouter.kt",
+      "status": "OK",
+      "detail": "create 4517 bytes"
+    }
+  ]
+}

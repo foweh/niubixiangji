@@ -15,6 +15,9 @@
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
     <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
     <uses-permission android:name="android.permission.HIGH_SAMPLING_RATE_SENSORS" />
+    <uses-feature android:name="android.hardware.sensor.gyroscope" android:required="false" />
+    <uses-feature android:name="android.hardware.sensor.compass" android:required="false" />
+    <uses-feature android:name="android.hardware.location.gps" android:required="false" />
 
     <uses-feature
             android:name="android.hardware.camera"
@@ -34,6 +37,7 @@
             android:roundIcon="@mipmap/ic_launcher_round"
             android:supportsRtl="true"
             android:largeHeap="true"
+            android:networkSecurityConfig="@xml/network_security_config"
             android:theme="@style/Theme.MyCamera">
         <activity
                 android:name=".MainActivity"
@@ -195,6 +199,20 @@
                 android:theme="@style/Theme.MyCamera.Transparent">
             <intent-filter>
                 <action android:name="com.hinnka.mycamera.action.SELECT_MGC_LOOK" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+        <!-- 画廊快速编辑入口：跨代理协议 EDIT_MEDIA（独立相册 V4 以该 intent 调起） -->
+        <activity
+                android:name=".galleryedit.GeEditEntryActivity"
+                android:excludeFromRecents="true"
+                android:exported="true"
+                android:finishOnTaskLaunch="true"
+                android:label="@string/ge_edit_title"
+                android:launchMode="singleTop"
+                android:theme="@style/Theme.MyCamera">
+            <intent-filter>
+                <action android:name="com.hinnka.mycamera.action.EDIT_MEDIA" />
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>

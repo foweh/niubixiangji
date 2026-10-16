@@ -132,8 +132,13 @@ fun AstroOverlay(
     modifier: Modifier = Modifier,
     state: AstroOverlayState,
     onVisibilityToggle: ((Boolean) -> Unit)? = null,
-) {
-    val context = LocalContext.current
+    /**
+     * astronav 注入的「世界 -> 设备」旋转矩阵（行主序 9 元素，含真北校正）。
+     * null（既有调用点的默认值）= 继续用本文件内置的 TYPE_ROTATION_VECTOR 链路，
+     * 逐行行为不变（零回归）。
+     */
+    matrixOverride: FloatArray? = null,
+) {    val context = LocalContext.current
     val view = LocalView.current
     val density = LocalDensity.current
 
@@ -193,10 +198,12 @@ fun AstroOverlay(
                 val focalPx = AstroProjection.focalPxForHfov(
                     size.width, state.horizontalFovDegrees,
                 )
-                val r = rotationMatrix ?: FloatArray(9) { i ->
-                    if (i % 4 == 0) 1f else 0f // 单位矩阵回退
-                }
-                val lstHours = (state.manualOffsetDegrees + dragOffsetDeg) / 15f
+                // astronav 注入优先；未注入（null）时与既有行为逐行等价。
+                val r = matrixOverride?.takeIf { it.size == 9 }
+                    ?: rotationMatrix
+                    ?: FloatArray(9) { i ->
+                        if (i % 4 == 0) 1f else 0f // 单位矩阵回退
+                    }                val lstHours = (state.manualOffsetDegrees + dragOffsetDeg) / 15f
                 val lat = state.observerLatitudeDegrees
                 val rotDeg = -state.displayRotationDegrees.toFloat()
 

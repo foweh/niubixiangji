@@ -119,7 +119,8 @@ fun getVideoExportOptions(
             outputHeight = resolvedOutputSize.height,
         )
         val exceedsStandard4K =
-            resolvedOutputSize.width.toLong() * resolvedOutputSize.height.toLong() > 3840L * 2160L
+            resolvedOutputSize.width.toLong() * resolvedOutputSize.height.toLong() >
+                VideoExportResolution.UHD_4K.longEdge.toLong() * VideoExportResolution.UHD_4K.shortEdge.toLong()
 
         val support = when {
             sourceFormat.width <= 0 || sourceFormat.height <= 0 -> VideoExportSupport.MAY_FAIL

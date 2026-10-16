@@ -1,0 +1,191 @@
+{
+  "ops_file": "round2",
+  "dry_run": false,
+  "ok": 25,
+  "skip": 0,
+  "fail": 1,
+  "results": [
+    {
+      "i": 0,
+      "op": "x_insert_before_f",
+      "file": "app/src/main/java/com/hinnka/mycamera/computational/BgJobRunner.kt",
+      "status": "OK",
+      "detail": "x_insert_before_f ×1 [exact] (delivery/patches/appgallerypreview_patch.md:48)"
+    },
+    {
+      "i": 1,
+      "op": "x_insert_after_f",
+      "file": "app/src/main/res/values/strings.xml",
+      "status": "OK",
+      "detail": "x_insert_after_f ×1 [exact] (delivery/patches/appgallerypreview_patch.md:65)"
+    },
+    {
+      "i": 2,
+      "op": "x_insert_after_f",
+      "file": "app/src/main/java/com/hinnka/mycamera/MainActivity.kt",
+      "status": "OK",
+      "detail": "x_insert_after_f ×1 [exact] (delivery/patches/appgallerypreview_patch.md:162)"
+    },
+    {
+      "i": 3,
+      "op": "x_insert_before_f",
+      "file": "app/src/main/java/com/hinnka/mycamera/MainActivity.kt",
+      "status": "OK",
+      "detail": "x_insert_before_f ×1 [exact] (delivery/patches/appgallerypreview_patch.md:192)"
+    },
+    {
+      "i": 4,
+      "op": "x_replace",
+      "file": "app/src/main/java/com/hinnka/mycamera/MainActivity.kt",
+      "status": "OK",
+      "detail": "x_replace ×1 [exact] (delivery/patches/appgallerypreview_patch.md:235)"
+    },
+    {
+      "i": 5,
+      "op": "x_insert_after",
+      "file": "app/src/main/AndroidManifest.xml",
+      "status": "OK",
+      "detail": "x_insert_after ×1 [exact] (delivery/patches/astronav_patch.md:58)"
+    },
+    {
+      "i": 6,
+      "op": "x_insert_before_f",
+      "file": "app/src/main/java/com/hinnka/mycamera/computational/BgJobRunner.kt",
+      "status": "OK",
+      "detail": "x_insert_before_f ×1 [exact] (delivery/patches/astronav_patch.md:83)"
+    },
+    {
+      "i": 7,
+      "op": "x_insert_after_f",
+      "file": "app/src/main/java/com/hinnka/mycamera/aiplatform/AiCapability.kt",
+      "status": "OK",
+      "detail": "x_insert_after_f ×1 [exact] (delivery/patches/astronav_patch.md:98)"
+    },
+    {
+      "i": 8,
+      "op": "x_insert_before",
+      "file": "app/src/main/res/values/strings.xml",
+      "status": "OK",
+      "detail": "x_insert_before ×1 [exact] (delivery/patches/astronav_patch.md:111)"
+    },
+    {
+      "i": 9,
+      "op": "x_replace",
+      "file": "app/src/main/java/com/hinnka/mycamera/ui/astro/AstroOverlay.kt",
+      "status": "OK",
+      "detail": "x_replace ×1 [exact] (delivery/patches/astronav_patch.md:152)"
+    },
+    {
+      "i": 10,
+      "op": "x_replace",
+      "file": "app/src/main/java/com/hinnka/mycamera/ui/astro/AstroOverlay.kt",
+      "status": "OK",
+      "detail": "x_replace ×1 [exact] (delivery/patches/astronav_patch.md:173)"
+    },
+    {
+      "i": 11,
+      "op": "x_replace",
+      "file": "app/src/main/java/com/hinnka/mycamera/ui/camera/CameraScreen.kt",
+      "status": "OK",
+      "detail": "x_replace ×1 [exact] (delivery/patches/astronav_patch.md:213)"
+    },
+    {
+      "i": 12,
+      "op": "replace",
+      "file": "app/src/main/java/com/hinnka/mycamera/astronav/AstroNavBackgroundSolver.kt",
+      "status": "OK",
+      "detail": "replace ×1 [exact]"
+    },
+    {
+      "i": 13,
+      "op": "x_insert_after_f",
+      "file": "app/src/main/cpp/CMakeLists.txt",
+      "status": "OK",
+      "detail": "x_insert_after_f ×1 [exact] (delivery/patches/longexposure_patch.md:78)"
+    },
+    {
+      "i": 14,
+      "op": "x_insert_after_f",
+      "file": "app/src/main/java/com/hinnka/mycamera/computational/BgJobRunner.kt",
+      "status": "OK",
+      "detail": "x_insert_after_f ×1 [exact] (delivery/patches/longexposure_patch.md:105)"
+    },
+    {
+      "i": 15,
+      "op": "x_insert_before",
+      "file": "app/src/main/res/values/strings.xml",
+      "status": "OK",
+      "detail": "x_insert_before ×1 [exact] (delivery/patches/longexposure_patch.md:134)"
+    },
+    {
+      "i": 16,
+      "op": "x_insert_after_f",
+      "file": "app/src/main/java/com/hinnka/mycamera/ui/camera/CameraScreen.kt",
+      "status": "FAIL",
+      "detail": "锚点未找到（x_insert_after_f）：'        // 星轨变体：仅 ASTRO 场景。\\\\n        if (scene == ComputationalScene.ASTRO) {\\\\n   '"
+    },
+    {
+      "i": 17,
+      "op": "x_replace",
+      "file": "app/src/main/java/com/hinnka/mycamera/ui/settings/SettingsScreen.kt",
+      "status": "OK",
+      "detail": "x_replace ×1 [exact] (delivery/patches/longexposure_patch.md:265)"
+    },
+    {
+      "i": 18,
+      "op": "x_insert_after_f",
+      "file": "app/src/main/java/com/hinnka/mycamera/ui/camera/ComputationalSceneBar.kt",
+      "status": "OK",
+      "detail": "x_insert_after_f ×1 [dedent] (delivery/patches/longexposure_patch.md:329)"
+    },
+    {
+      "i": 19,
+      "op": "x_replace",
+      "file": "app/src/main/java/com/hinnka/mycamera/ui/settings/SettingsScreen.kt",
+      "status": "OK",
+      "detail": "x_replace ×1 [exact] (delivery/patches/uisettings_patch.md:80)"
+    },
+    {
+      "i": 20,
+      "op": "x_replace",
+      "file": "app/src/main/java/com/hinnka/mycamera/ui/settings/SettingsScreen.kt",
+      "status": "OK",
+      "detail": "x_replace ×1 [exact] (delivery/patches/uisettings_patch.md:100)"
+    },
+    {
+      "i": 21,
+      "op": "x_replace",
+      "file": "app/src/main/java/com/hinnka/mycamera/ui/settings/SettingsScreen.kt",
+      "status": "OK",
+      "detail": "x_replace ×1 [exact] (delivery/patches/uisettings_patch.md:120)"
+    },
+    {
+      "i": 22,
+      "op": "x_replace",
+      "file": "app/src/main/java/com/hinnka/mycamera/MainActivity.kt",
+      "status": "OK",
+      "detail": "x_replace ×1 [exact] (delivery/patches/uisettings_patch.md:152)"
+    },
+    {
+      "i": 23,
+      "op": "x_replace",
+      "file": "app/src/main/java/com/hinnka/mycamera/MainActivity.kt",
+      "status": "OK",
+      "detail": "x_replace ×1 [exact] (delivery/patches/uisettings_patch.md:168)"
+    },
+    {
+      "i": 24,
+      "op": "x_replace",
+      "file": "app/src/main/java/com/hinnka/mycamera/MainActivity.kt",
+      "status": "OK",
+      "detail": "x_replace ×1 [exact] (delivery/patches/uisettings_patch.md:188)"
+    },
+    {
+      "i": 25,
+      "op": "x_insert_before_f",
+      "file": "app/src/main/java/com/hinnka/mycamera/MainActivity.kt",
+      "status": "OK",
+      "detail": "x_insert_before_f ×1 [exact] (delivery/patches/uisettings_patch.md:211)"
+    }
+  ]
+}

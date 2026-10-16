@@ -38,6 +38,11 @@ import com.hinnka.mycamera.frame.FrameInfo
 import com.hinnka.mycamera.frame.FramePreviewFactory
 import com.hinnka.mycamera.frame.FramePreviewSelection
 import com.hinnka.mycamera.gallery.GalleryManager
+import android.widget.Toast
+import com.hinnka.mycamera.aiplatform.AiNotices
+import com.hinnka.mycamera.aiplatform.AiPlatform
+import com.hinnka.mycamera.computational.BgJob
+import java.io.File
 import com.hinnka.mycamera.gallery.MediaMetadata
 import com.hinnka.mycamera.gallery.PhotoSavePath
 import com.hinnka.mycamera.lut.BaselineColorCorrectionTarget
@@ -617,6 +622,8 @@ class CameraViewModel(application: Application) : AndroidViewModel(application) 
 
     // 照片保存完成事件
     private val _imageSavedEvent = MutableSharedFlow<String?>()
+    /** AI 平台层接线：本进程内提交过的后台 AI 任务（便于排查 / 后续统一取消）。 */
+    private val backgroundAiJobs = mutableListOf<BgJob>()
     val imageSavedEvent: SharedFlow<String?> = _imageSavedEvent.asSharedFlow()
 
     // Shutter completion is independent of image delivery and the render/save queue.
@@ -637,9 +644,7 @@ class CameraViewModel(application: Application) : AndroidViewModel(application) 
         private set
 
     // 计算摄影场景状态（HDR / 夜景 / 天文 / 人像）。由 ui/camera/ComputationalSceneBar 渲染，
-    // selectComputationalScene 转发给 cameraController；未选中时保持 STANDARD 以兼容现有主链路。
-    // 注意：属性名 computationalScene 会生成 setComputationalScene setter，因此本地转发方法不能再叫
-    // setComputationalScene（否则 Platform declaration clash），统一使用 selectComputationalScene。
+    // setComputationalScene 转发给 cameraController；未选中时保持 STANDARD 以兼容现有主链路。
     var computationalScene: ComputationalScene by mutableStateOf(ComputationalScene.STANDARD)
         private set
 
@@ -653,8 +658,37 @@ class CameraViewModel(application: Application) : AndroidViewModel(application) 
         private set
     var stackFrameCount: Int by mutableStateOf(8)
         private set
-    var stackAlign: Boolean by mutableStateOf(true)
+    var stackAlign: Boolean by mutableStateOf(MultiFrameConfig.DEFAULT_STACK_ALIGN)
+
+    /** 星轨叠加开关（拍照链路用；与 stackAlign 同级，转发到 gallery 的堆栈路由）。 */
+    var starTrailsEnabled: Boolean by mutableStateOf(false)
         private set
+    /** 星轨叠加方式（Lighten / Sum-Avg）。 */
+    var trailAccumulationMode: AstroStacker.TrailAccumulationMode by
+        mutableStateOf(AstroStacker.TrailAccumulationMode.LIGHTEN_MAX)
+        private set
+
+    fun updateStarTrailsEnabled(enabled: Boolean) {
+        if (starTrailsEnabled == enabled) return
+        starTrailsEnabled = enabled
+        // 星轨必须免对齐（星点位移就是要保留的结果）。
+        if (enabled) setStackConfig(stackType, stackFrameCount, align = false)
+    }
+
+    fun updateTrailAccumulationMode(mode: AstroStacker.TrailAccumulationMode) {
+        trailAccumulationMode = mode
+    }
+
+    /**
+     * 服务器端增强开关（P1-12：取代 CameraScreen 的纯局部 Compose 状态）。
+     * 真正的可用性门控在 `AiConfigStore` 的 SERVER_ENHANCE 能力（默认关）；此处仅保存用户意图。
+     */
+    var serverEnhancementEnabled: Boolean by mutableStateOf(false)
+        private set
+
+    fun updateServerEnhancementEnabled(enabled: Boolean) {
+        serverEnhancementEnabled = enabled
+    }
 
     private val _currentEnginePreviewPlan = MutableStateFlow<RawEnginePreviewPlan?>(null)
     val currentEnginePreviewPlan = _currentEnginePreviewPlan.asStateFlow()
@@ -4014,7 +4048,7 @@ class CameraViewModel(application: Application) : AndroidViewModel(application) 
      * 帧数收敛在 1..MAX_STACK_FRAMES，非法值由 controller 侧兜底。
      */
     fun setStackConfig(type: PsStackType, frameCount: Int, align: Boolean) {
-        val clamped = frameCount.coerceIn(1, 32)
+        val clamped = MultiFrameConfig.normalizeDenoiseFrameCount(frameCount)
         if (stackType == type && stackFrameCount == clamped && stackAlign == align) return
         stackType = type
         stackFrameCount = clamped
@@ -4650,6 +4684,33 @@ class CameraViewModel(application: Application) : AndroidViewModel(application) 
     /**
      * 查询可用的 AI 模型列表
      */
+    /**
+     * AI 平台层接线（aiplatform_patch.md 注入）。
+     *
+     * 生效条件（全部满足才上送，否则完全保持现状，零行为变化）：
+     *  1) `AiConfigStore` 的 SERVER_ENHANCE 能力 `isEnabled`（默认 baseUrl 为空 = 关闭）；
+     *  2) 出片文件存在。
+     * 失败处理：走 `AiHttpClient.executeWithFallback`，归因提示 + 保留本地堆栈结果；任何异常一律吞掉。
+     */
+    private fun maybeEnqueueServerEnhancement(photoId: String) {
+        runCatching {
+            val appContext = getApplication<Application>()
+            val platform = AiPlatform.peek() ?: AiPlatform.get(appContext)
+            val client = ServerEnhancementClient()
+            client.enqueueViaPlatform(
+                context = appContext,
+                inputFile = GalleryManager.getPhotoFile(appContext, photoId),
+                outputFile = File(
+                    GalleryManager.getPhotoFile(appContext, photoId).parentFile,
+                    photoId + "_enhanced.png",
+                ),
+                onNotice = { reason, _ ->
+                    // 只提示，不打断出片（AI 不可用 → 本地结果仍是可用结果）
+                    Toast.makeText(appContext, AiNotices.describe(reason), Toast.LENGTH_SHORT).show()
+                },
+            ).also { job -> backgroundAiJobs += job }
+        }.onFailure { PLog.w(TAG, "Server enhance hook skipped: ${it.message}") }
+    }
     fun fetchAvailableAIModels() {
         if (_isFetchingAIModels.value) return
 
@@ -5068,7 +5129,7 @@ class CameraViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     fun setMultipleExposureCount(count: Int) {
-        val normalizedCount = count.coerceIn(2, 9)
+        val normalizedCount = count.coerceIn(2, MultipleExposureLimits.MAX_FRAMES)
         multipleExposureState = multipleExposureState.copy(targetCount = normalizedCount)
         viewModelScope.launch {
             userPreferencesRepository.saveMultipleExposureCount(normalizedCount)
@@ -6594,8 +6655,13 @@ class CameraViewModel(application: Application) : AndroidViewModel(application) 
                     psStackType = stackType,
                     psStackFrameCount = stackFrameCount,
                     psStackAlign = stackAlign,
+                    starTrailsEnabled = starTrailsEnabled,
+                    trailAccumulationMode = trailAccumulationMode,
                 )
             }
+            // === AI 平台层接线（aiplatform_patch.md）：解决审计 F1「零调用方」===
+            // 出片之后才决定是否上送服务器增强；未配置/失败只提示 + 保留本地结果，不阻塞出片。
+            maybeEnqueueServerEnhancement(photoId)
             PLog.d(TAG, "Image saved: $photoId, LUT: $lutIdToSave, Frame: $frameIdToSave")
             markCapturedThumbnailSaved(settings, photoId)
             _imageSavedEvent.emit(photoId)
@@ -7221,4 +7287,12 @@ private fun shouldIncludeCropRegionInOutputSize(imageFormat: Int): Boolean {
 
         else -> false
     }
+}
+
+
+/** 多重曝光开放上限（磁盘分帧，仅防误设；默认行为不变）。 */
+object MultipleExposureLimits {
+    const val DEFAULT_MAX_FRAMES = 9
+    @Volatile var userMaxFrames: Int = DEFAULT_MAX_FRAMES
+    val MAX_FRAMES: Int get() = userMaxFrames.coerceIn(2, 256)
 }

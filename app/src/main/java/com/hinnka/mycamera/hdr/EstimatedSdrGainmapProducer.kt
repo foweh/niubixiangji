@@ -34,8 +34,8 @@ class EstimatedSdrGainmapProducer : GainmapProducer {
     private fun createGainmapBitmap(sdrBase: Bitmap, fullHdrRatio: Float, strength: Float): Bitmap? {
         if (sdrBase.width <= 0 || sdrBase.height <= 0) return null
 
-        val width = (sdrBase.width / DOWNSAMPLE).coerceAtLeast(1)
-        val height = (sdrBase.height / DOWNSAMPLE).coerceAtLeast(1)
+        val width = (sdrBase.width / downsample()).coerceAtLeast(1)
+        val height = (sdrBase.height / downsample()).coerceAtLeast(1)
         val contents = Bitmap.createBitmap(width, height, Bitmap.Config.ALPHA_8)
         val pixels = ByteArray(width * height)
 
@@ -68,6 +68,9 @@ class EstimatedSdrGainmapProducer : GainmapProducer {
 
     companion object {
         private const val DOWNSAMPLE = 4
+        /** 增益图降采样系数：默认 4（保持既有行为）；可配 1/2/4/8。 */
+        @Volatile var userDownsample: Int = DOWNSAMPLE
+        fun downsample(): Int = userDownsample.takeIf { it in intArrayOf(1, 2, 4, 8) } ?: DOWNSAMPLE
         private const val MIN_GAIN_RATIO = 1.0f
         private const val MAX_GAIN_RATIO = 4.0f
         private const val EPSILON = 1e-4f

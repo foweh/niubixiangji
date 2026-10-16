@@ -20,6 +20,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hinnka.mycamera.camera.ComputationalScene
 import com.hinnka.mycamera.camera.PsStackType
+import com.hinnka.mycamera.funshot.FunshotSceneChipHost
+import com.hinnka.mycamera.multiframesr.MfsrSceneChipHost
+import com.hinnka.mycamera.camera.MultiFrameConfig
 
 /**
  * 计算摄影场景入口条（HDR / 夜景 / 天文 / 人像 / 堆栈）。
@@ -35,7 +38,13 @@ import com.hinnka.mycamera.camera.PsStackType
  */
 @Composable
 fun ComputationalSceneBar(
-    scene: ComputationalScene,
+
+LongExposureEngine.submitLightPainting(  // 或 submitSlowShutter / submitFireworks / submitSuperMoon
+    config = lightPaintingConfig, darkFrameConfig = darkConfig,
+    frameSource = LongExposureJobRunner.FileFrameSource(paths, width, height),
+    previewEnabled = true, onPreview = { plane, index -> /* 更新预览 Bitmap */ },
+    onFinish = { plane -> /* 保存/送入 GalleryManager */ }
+)    scene: ComputationalScene,
     onSceneSelected: (ComputationalScene) -> Unit,
     isVideoMode: Boolean,
     rawVideoEnabled: Boolean,
@@ -116,14 +125,31 @@ fun ComputationalSceneBar(
                 onClick = { onServerEnhancementToggle(!serverEnhancementEnabled) }
             )
         }
+
+        // 创意拍摄玩法（全景拼接 / 声控 / 运动 / GIF / 间隔连拍）：自包含 chip 行，不新增也不重排本函数参数。
+        FunshotSceneChipHost()
+
+        // 多帧超分（帧数完全开放 2~1000）：自包含 chip + 参数面板，不改既有签名与状态。
+        MfsrSceneChipHost()
     }
 }
 
+/** 帧数档位：按当前运行时上限动态生成（默认上限 20 时与原 ≤20 档位一致）。 */
+private val STACK_FRAME_STEPS: IntArray
+    get() {
+        val max = MultiFrameConfig.frameCountLimit()
+        return intArrayOf(3, 5, 8, 16, 24, 32, 48, 64, 96, 128, 192, 256, 384, 512)
+            .filter { it <= max }
+            .toIntArray()
+            .takeIf { it.isNotEmpty() }
+            ?: intArrayOf(max)
+    }
+
 private fun stepStackFrameCount(current: Int): Int {
-    // 常用档位：3/5/8/16/24/32，循环步进。
-    val steps = intArrayOf(3, 5, 8, 16, 24, 32)
-    val idx = steps.indexOf(current)
-    return steps[(idx + 1).coerceAtMost(steps.size - 1)]
+    val steps = STACK_FRAME_STEPS
+    // 当前值可能来自滑杆（不在档位表内）：取"第一个比它大的档位"；已在顶则停住。
+    val nextIndex = steps.indexOfFirst { it > current }
+    return if (nextIndex >= 0) steps[nextIndex] else steps.last()
 }
 
 private fun sceneLabel(scene: ComputationalScene): String = when (scene) {

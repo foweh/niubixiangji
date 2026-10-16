@@ -45,6 +45,10 @@ import com.hinnka.mycamera.processor.GpuLinearRgbStorage
 import com.hinnka.mycamera.processor.MgcSpatialOutputMode
 import com.hinnka.mycamera.processor.MgcMergeMethod
 import com.hinnka.mycamera.processor.MultiFrameStacker
+import com.hinnka.mycamera.computational.AstroStacker
+import com.hinnka.mycamera.computational.BgJob
+import com.hinnka.mycamera.processor.ComputationalStackRouter
+import kotlin.coroutines.resume
 import com.hinnka.mycamera.raw.RawNoiseProfileManager
 import com.hinnka.mycamera.processor.RawStackBufferLayout
 import com.hinnka.mycamera.processor.RawStackFrame
@@ -2870,6 +2874,8 @@ object GalleryManager {
         context: Context,
         sessionId: String,
         maxEdge: Int = 1440,
+        // P2-6：预览/快照复用同一分辨率（默认 1440 与原硬编码一致；与
+        // CameraScreen 的 PreviewCaptureLimits.previewMaxLongEdge() 成对）。
         photoQuality: Int = 85
     ): Bitmap? = withContext(Dispatchers.IO) {
         val frameFiles = getMultipleExposureFrameFiles(context, sessionId)
@@ -3016,17 +3022,17 @@ object GalleryManager {
         return when {
             index == HDR_BRACKET_HIGH_INDEX -> Math.pow(
                 2.0,
-                HdrBracketConfig.YUV_LONG_EV.toDouble(),
+                HdrBracketConfig.yuvLongEv().toDouble(),
             ).toFloat()
             index == HDR_BRACKET_LOW_INDEX -> Math.pow(
                 2.0,
-                HdrBracketConfig.YUV_SHORT_EV.toDouble(),
+                HdrBracketConfig.yuvShortEv().toDouble(),
             ).toFloat()
             else -> 1f
         }
     }
 
-    private fun processHdrBracketYuvFrames(
+    private suspend fun processHdrBracketYuvFrames(
         images: List<SafeImage>,
         frameSelection: YuvHdrFrameSelection,
         rotation: Int,
@@ -3034,16 +3040,21 @@ object GalleryManager {
         shouldMirror: Boolean,
         colorSpace: ColorSpace,
     ): Bitmap {
-        val stackResult = MultiFrameStacker.processHdrBurstYuv(
-            frames = buildYuvHdrStackFrames(
-                images = images,
-                frameSelection = frameSelection,
-            ),
-            fusionExposureProducts = frameSelection.fusionExposureProducts,
-            rotation = rotation,
-            aspectRatio = aspectRatio,
-            colorSpace = colorSpace,
-        ) ?: throw IllegalStateException("Failed to stack and compose aligned HDR YUV frames")
+        // P0-8：HDR 合并（最重的一步）改走 BgJobRunner 异步入口，内存守卫/取消/节流生效。
+        val stackResult = awaitBgJob { cb ->
+            MultiFrameStacker.processHdrBurstYuvAsync(
+                frames = buildYuvHdrStackFrames(
+                    images = images,
+                    frameSelection = frameSelection,
+                ),
+                fusionExposureProducts = frameSelection.fusionExposureProducts,
+                rotation = rotation,
+                aspectRatio = aspectRatio,
+                colorSpace = colorSpace,
+                displayName = "HDR Merge",
+                onResult = cb,
+            )
+        } ?: throw IllegalStateException("Failed to stack and compose aligned HDR YUV frames")
 
         return mirrorBitmapIfNeeded(stackResult, shouldMirror)
     }
@@ -3186,6 +3197,17 @@ object GalleryManager {
         inputInts.rewind()
     }
 
+    /**
+     * 同步桥：把 [BgJobRunner] 后台入口包成可挂起等待（P0-8）。
+     * 取消时联动取消后台任务；任务内部失败给 null，不会把异常抛进出片链路。
+     */
+    private suspend fun <T> awaitBgJob(block: ((T?) -> Unit) -> BgJob): T? =
+        suspendCancellableCoroutine { cont ->
+            val job = block { result -> if (cont.isActive) cont.resume(result) }
+            cont.invokeOnCancellation { job.cancel() }
+        }
+
+
     suspend fun saveYuvStackedPhoto(
         context: Context,
         photoId: String,
@@ -3206,7 +3228,11 @@ object GalleryManager {
         computationalScene: ComputationalScene = ComputationalScene.STANDARD,
         psStackType: PsStackType = PsStackType.MEAN,
         psStackFrameCount: Int = MultiFrameConfig.DEFAULT_DENOISE_FRAME_COUNT,
-        psStackAlign: Boolean = true,
+        psStackAlign: Boolean = MultiFrameConfig.DEFAULT_STACK_ALIGN,
+        // P0-4/P0-5：星轨路由与对齐默认值统一到 MultiFrameConfig 单一真值源。
+        starTrailsEnabled: Boolean = false,
+        trailAccumulationMode: AstroStacker.TrailAccumulationMode =
+            AstroStacker.TrailAccumulationMode.LIGHTEN_MAX,
     ) = withContext(Dispatchers.IO) {
         try {
             val photoDir = getPhotoDir(context, photoId, true)
@@ -3219,34 +3245,34 @@ object GalleryManager {
             // STANDARD（默认）走原有 processBurst，行为与现状完全一致。
             // 注意：下列各堆栈器都会在 finally 中关闭 images（帧所有权一次性转移），
             // 故路由二选一，失败后不能重试 processBurst；失败时 result=null 直接安全返回。
-            var result: Bitmap? = when (computationalScene) {
-                ComputationalScene.NIGHT,
-                ComputationalScene.STACK -> runCatching {
-                    MultiFrameStacker.processPsStack(
+            // P0-7 + P0-8：统一路由器（唯一 scene→stacker 映射）+ BgJobRunner 后台入口。
+            // NIGHT/STACK/ASTRO 走后台队列（内存守卫 / 暂停 / 取消 / 分片节流真正生效）；
+            // 其余场景保留既有同步 processBurst。
+            val stackRequest = ComputationalStackRouter.StackRequest(
+                scene = computationalScene,
+                stackType = psStackType,
+                frameCount = psStackFrameCount,
+                align = psStackAlign,
+                starTrailsEnabled = starTrailsEnabled,
+                trailAccumulationMode = trailAccumulationMode,
+            )
+            var result: Bitmap? = if (ComputationalStackRouter.supportsAsync(computationalScene)) {
+                awaitBgJob { cb ->
+                    ComputationalStackRouter.routeAsync(
+                        request = stackRequest,
                         images = images,
                         rotation = rotation,
                         aspectRatio = aspectRatio,
                         colorSpace = colorSpace,
-                        type = psStackType,
-                        frameCount = psStackFrameCount,
-                        align = psStackAlign,
-                    )
-                }.onFailure { e ->
-                    PLog.w(TAG, "PS stack failed (scene=$computationalScene), frames consumed", e)
-                }.getOrNull()
-
-                ComputationalScene.ASTRO -> runCatching {
-                    MultiFrameStacker.processAstroBurst(
-                        images = images,
-                        rotation = rotation,
-                        aspectRatio = aspectRatio,
-                        colorSpace = colorSpace,
-                    )
-                }.onFailure { e ->
-                    PLog.w(TAG, "Astro stack failed, frames consumed", e)
-                }.getOrNull()
-
-                else -> MultiFrameStacker.processBurst(
+                        onResult = cb,
+                    ) ?: error("async stack route unavailable: $computationalScene")
+                }.also { stacked ->
+                    if (stacked == null) {
+                        PLog.w(TAG, "async stack failed (scene=$computationalScene), frames consumed")
+                    }
+                }
+            } else {
+                MultiFrameStacker.processBurst(
                     images = images,
                     rotation = rotation,
                     aspectRatio = aspectRatio,
@@ -4553,7 +4579,11 @@ object GalleryManager {
         computationalScene: ComputationalScene = ComputationalScene.STANDARD,
         psStackType: PsStackType = PsStackType.MEAN,
         psStackFrameCount: Int = MultiFrameConfig.DEFAULT_DENOISE_FRAME_COUNT,
-        psStackAlign: Boolean = true,
+        psStackAlign: Boolean = MultiFrameConfig.DEFAULT_STACK_ALIGN,
+        // P0-4/P0-5：星轨路由与对齐默认值统一到 MultiFrameConfig 单一真值源。
+        starTrailsEnabled: Boolean = false,
+        trailAccumulationMode: AstroStacker.TrailAccumulationMode =
+            AstroStacker.TrailAccumulationMode.LIGHTEN_MAX,
     ) = withContext(Dispatchers.IO) {
         when (val format = images[0].format) {
             ImageFormat.YUV_420_888, ImageFormat.YCBCR_P010, ImageFormat.NV21 -> {
@@ -4575,6 +4605,8 @@ object GalleryManager {
                     psStackType = psStackType,
                     psStackFrameCount = psStackFrameCount,
                     psStackAlign = psStackAlign,
+                    starTrailsEnabled = starTrailsEnabled,
+                    trailAccumulationMode = trailAccumulationMode,
                 )
             }
 

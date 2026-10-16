@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Log 视频模块（视频 20 项第 1-3 项）中文文案。 -->
+<resources>
+    <string name="logvideo_section_title">Log 视频</string>
+    <string name="logvideo_curve_row1">主推档位</string>
+    <string name="logvideo_curve_row2">更多 Log 曲线</string>
+    <string name="logvideo_black_level">黑电平</string>
+    <string name="logvideo_peak">峰值（场景白点）</string>
+    <string name="logvideo_slope">斜率</string>
+    <string name="logvideo_lut_intensity">LUT 强度</string>
+    <string name="logvideo_lut_size">还原 LUT 尺寸</string>
+    <string name="logvideo_bake_action">一键烘焙 Log→Rec.709 LUT</string>
+    <string name="logvideo_bake_running">正在烘焙…</string>
+    <string name="logvideo_bake_done">已烘焙并套用：%1$s</string>
+    <string name="logvideo_bake_failed">烘焙失败，Log 录制不受影响</string>
+    <string name="logvideo_reset">重置</string>
+    <string name="logvideo_pack_hint">可下载 Log→Rec.709 转换包：%1$d</string>
+    <string name="logvideo_trim_hint">默认值等同档位原生曲线（无改动）</string>
+    <string name="logvideo_baked_restore_hint">Log→Rec.709 LUT 端上程序化烘焙，新手一键套用</string>
+</resources>

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Log 视频模块（视频 20 项第 1-3 项）文案。独立文件，便于本模块整体回滚。 -->
+<resources>
+    <string name="logvideo_section_title">Log video</string>
+    <string name="logvideo_curve_row1">Main</string>
+    <string name="logvideo_curve_row2">More Log curves</string>
+    <string name="logvideo_black_level">Black level</string>
+    <string name="logvideo_peak">Peak (scene white)</string>
+    <string name="logvideo_slope">Slope</string>
+    <string name="logvideo_lut_intensity">LUT strength</string>
+    <string name="logvideo_lut_size">Restore LUT size</string>
+    <string name="logvideo_bake_action">Bake Log→Rec.709 LUT</string>
+    <string name="logvideo_bake_running">Baking…</string>
+    <string name="logvideo_bake_done">Baked and applied: %1$s</string>
+    <string name="logvideo_bake_failed">Baking failed, Log recording is unaffected</string>
+    <string name="logvideo_reset">Reset</string>
+    <string name="logvideo_pack_hint">Downloadable Log→Rec.709 packs: %1$d</string>
+    <string name="logvideo_trim_hint">Defaults equal the native preset curve (no change)</string>
+    <string name="logvideo_baked_restore_hint">Log→Rec.709 LUT is baked on device, one-tap apply</string>
+</resources>

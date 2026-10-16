@@ -80,7 +80,24 @@ enum class TransferCurve(
         11, 10,
         1.3f, 0.0115f, 0.27f, 0.6f, 8.0f, 0.09f,
         0.006f, 0.138f, 0.4353139f, 23.3f, 0
-    );
+    ),
+    /**
+     * ARRI LogC3（EI 800）公开曲线规格：编码 `y = c·log10(a·x + b) + d`（线性段 `y = e·x + f`）。
+     * 常量取自 ARRI 公开规格文档（`https://www.arri.com/en/learn-help/learn-help-camera-system/tools/lut-generator`）：
+     * A=5.555556, B=0.052272, C=0.247190, D=0.385537, E=5.367655, F=0.092809，
+     * 线性/对数分界 `cut1 = 0.010591`，分界处代码 `cut2 = 0.1497`，
+     * 18% 中灰代码 `middleGray = 0.391`，代码 1.0 处线性值 `maxLinear = 55.10`。
+     *
+     * - `storageId = 12`：既有占用 0..11（注意 `fromStorageId` 中 9 已被 LOGC4 别名占用，故取 12，
+     *   与还原本模块 `scripts/generate_log_restore_luts.py` 写出的 `.plut` 头部标签一致）；
+     * - `shaderId = 11`：`PreviewColorShaderModules.applyLutCurve` 中 0..10 已占用，新增分支用 11。
+     */
+    LOGC3(
+        12, 11,
+        5.555556f, 0.052272f, 0.247190f, 0.385537f, 5.367655f, 0.092809f,
+        0.010591f, 0.1497f, 0.391f, 55.10f, 0
+    ),
+    ;
 
     val isLog: Boolean
         get() = this !in setOf(SRGB, LINEAR, HLG)

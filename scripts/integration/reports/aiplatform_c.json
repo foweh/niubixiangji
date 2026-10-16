@@ -1,0 +1,128 @@
+{
+  "ops_file": "aiplatform_c",
+  "dry_run": false,
+  "ok": 17,
+  "skip": 0,
+  "fail": 0,
+  "results": [
+    {
+      "i": 0,
+      "op": "extract",
+      "file": "app/src/main/java/com/hinnka/mycamera/lut/LutRecommenderConfig.kt",
+      "status": "OK",
+      "detail": "extract 1511 bytes (delivery/patches/aiplatform_patch.md:628)"
+    },
+    {
+      "i": 1,
+      "op": "extract",
+      "file": "app/src/main/java/com/hinnka/mycamera/lut/LutRecommendationBridge.kt",
+      "status": "OK",
+      "detail": "extract 2897 bytes (delivery/patches/aiplatform_patch.md:759)"
+    },
+    {
+      "i": 2,
+      "op": "extract",
+      "file": "app/src/main/java/com/hinnka/mycamera/lut/LutAiSettingsSection.kt",
+      "status": "OK",
+      "detail": "extract 1950 bytes (delivery/patches/aiplatform_patch.md:842)"
+    },
+    {
+      "i": 3,
+      "op": "x_replace",
+      "file": "app/src/main/java/com/hinnka/mycamera/lut/LutRecommender.kt",
+      "status": "OK",
+      "detail": "x_replace ×1 [exact] (delivery/patches/aiplatform_patch.md:681)"
+    },
+    {
+      "i": 4,
+      "op": "x_replace",
+      "file": "app/src/main/java/com/hinnka/mycamera/lut/LutRecommender.kt",
+      "status": "OK",
+      "detail": "x_replace ×1 [exact] (delivery/patches/aiplatform_patch.md:712)"
+    },
+    {
+      "i": 5,
+      "op": "replace",
+      "file": "app/src/main/java/com/hinnka/mycamera/lut/LutRecommender.kt",
+      "status": "OK",
+      "detail": "replace ×1 [exact]"
+    },
+    {
+      "i": 6,
+      "op": "x_replace",
+      "file": "app/src/main/java/com/hinnka/mycamera/lut/LutRecommender.kt",
+      "status": "OK",
+      "detail": "x_replace ×1 [exact] (delivery/patches/aiplatform_patch.md:746)"
+    },
+    {
+      "i": 7,
+      "op": "x_insert_after",
+      "file": "app/src/main/java/com/hinnka/mycamera/ui/gallery/GalleryDetailScreen.kt",
+      "status": "OK",
+      "detail": "x_insert_after ×1 [exact] (delivery/patches/aiplatform_patch.md:908)"
+    },
+    {
+      "i": 8,
+      "op": "replace",
+      "file": "app/src/main/java/com/hinnka/mycamera/ui/gallery/GalleryDetailScreen.kt",
+      "status": "OK",
+      "detail": "replace ×1 [exact]"
+    },
+    {
+      "i": 9,
+      "op": "insert_after",
+      "file": "app/src/main/java/com/hinnka/mycamera/ui/gallery/GalleryDetailScreen.kt",
+      "status": "OK",
+      "detail": "insert_after ×1 [exact]"
+    },
+    {
+      "i": 10,
+      "op": "x_replace",
+      "file": "app/src/main/java/com/hinnka/mycamera/lut/LutDownloadManager.kt",
+      "status": "OK",
+      "detail": "x_replace ×1 [exact] (delivery/patches/aiplatform_patch.md:962)"
+    },
+    {
+      "i": 11,
+      "op": "x_replace",
+      "file": "app/src/main/java/com/hinnka/mycamera/lut/LutDownloadManager.kt",
+      "status": "OK",
+      "detail": "x_replace ×1 [exact] (delivery/patches/aiplatform_patch.md:981)"
+    },
+    {
+      "i": 12,
+      "op": "x_replace",
+      "file": "app/src/main/java/com/hinnka/mycamera/lut/LutDownloadManager.kt",
+      "status": "OK",
+      "detail": "x_replace ×1 [exact] (delivery/patches/aiplatform_patch.md:1008)"
+    },
+    {
+      "i": 13,
+      "op": "x_replace",
+      "file": "app/src/main/java/com/hinnka/mycamera/lut/LutDownloadManager.kt",
+      "status": "OK",
+      "detail": "x_replace ×1 [exact] (delivery/patches/aiplatform_patch.md:1022)"
+    },
+    {
+      "i": 14,
+      "op": "x_replace",
+      "file": "app/src/main/java/com/hinnka/mycamera/lut/LutDownloadManager.kt",
+      "status": "OK",
+      "detail": "x_replace ×1 [exact] (delivery/patches/aiplatform_patch.md:1046)"
+    },
+    {
+      "i": 15,
+      "op": "insert_after",
+      "file": "app/src/main/java/com/hinnka/mycamera/lut/LutDownloadManager.kt",
+      "status": "OK",
+      "detail": "insert_after ×1 [exact]"
+    },
+    {
+      "i": 16,
+      "op": "x_write",
+      "file": "app/src/main/assets/luts/downloadable_sources.json",
+      "status": "OK",
+      "detail": "x_write 3072 bytes (delivery/patches/aiplatform_patch.md:1328)"
+    }
+  ]
+}

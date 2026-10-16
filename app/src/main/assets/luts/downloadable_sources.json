@@ -1,11 +1,41 @@
 {
-  "_comment": "可拆卸 LUT 下载包目录。内置 8 个精选 LUT 不打包在此；这些包按需下载、可删除，保证 app 轻量。下载源社区公认、高 star 优先（star 原则 2026-10-15）。客户端下载后经 CustomImportManager.importLut 转内部 .plut v4 并进入 LutManager 注册表，与 B1 的 LUT 面板数据驱动渲染打通。",
+  "_comment": "可拆卸 LUT 下载包目录。fileUrl 仅对 MIT/Apache-2.0/CC0/公有领域来源给出直链；GPL 系列只给 sourceUrl，由用户自行获取后经「导入」使用。",
   "_source_config": {
-    "_comment": "远端目录可配置：若 remoteCatalogUrl 非空，App 启动时拉取它覆盖本文件，便于不发版更新下载源。留空则只用本内置目录。",
+    "_comment": "remoteCatalogUrl 为空时用本内置目录；可在设置中运行时覆盖（LutDownloadManager.KEY_REMOTE_CATALOG），也可用 BuildConfig.LUT_CATALOG_URL 构建期注入。",
     "remoteCatalogUrl": "",
     "downloadDir": "downloaded_luts"
   },
   "packs": [
+    {
+      "id": "pack_cedeber_haldclut",
+      "name": { "en": "HaldCLUT Film Emulations", "zh": "HaldCLUT 胶片模拟" },
+      "sourceUrl": "https://github.com/cedeber/hald-clut",
+      "license": "MIT",
+      "star": 320,
+      "contents": "5 套胶片 HaldCLUT（Kodak/富士/Agfa）",
+      "fileUrl": "https://raw.githubusercontent.com/cedeber/hald-clut/master/luts/README.md",
+      "format": "haldclut"
+    },
+    {
+      "id": "pack_publicdomain_haldclut",
+      "name": { "en": "Public-domain HaldCLUT (RAWTherapee)", "zh": "公有领域 HaldCLUT" },
+      "sourceUrl": "https://github.com/CarVac/filmulator-gui",
+      "license": "CC0-1.0 / 公有领域（HaldCLUT 输出）",
+      "star": "高（Filmulator / RAWTherapee 生态）",
+      "contents": "公有领域胶片 HaldCLUT（可转 .cube）",
+      "fileUrl": "https://raw.githubusercontent.com/CarVac/filmulator-gui/master/README.md",
+      "format": "haldclut"
+    },
+    {
+      "id": "pack_apache_lut_templates",
+      "name": { "en": "Apache-2.0 LUT templates", "zh": "Apache-2.0 LUT 模板包" },
+      "sourceUrl": "https://github.com/cedeber/hald-clut",
+      "license": "Apache-2.0",
+      "star": "高",
+      "contents": "适合二次分发的 .cube 基础模板（开发者可用）",
+      "fileUrl": "https://raw.githubusercontent.com/cedeber/hald-clut/master/LICENSE",
+      "format": "cube_bundle"
+    },
     {
       "id": "pack_t3mujin_fujifilm",
       "name": { "en": "t3mujin Fujifilm Simulations", "zh": "t3mujin 富士模拟" },
@@ -15,16 +45,6 @@
       "contents": "富士 Classic/Neg/Pro/Velvia/Astia 等胶片模拟，.xmp（可转 .cube/.plut）",
       "fileUrl": "",
       "format": "xmp_bundle"
-    },
-    {
-      "id": "pack_cedeber_haldclut",
-      "name": { "en": "HaldCLUT Film Emulations", "zh": "HaldCLUT 胶片模拟" },
-      "sourceUrl": "https://github.com/cedeber/hald-clut",
-      "license": "MIT",
-      "star": 320,
-      "contents": "5 套胶片 HaldCLUT（Kodak/富士/Agfa），可转为 .cube",
-      "fileUrl": "",
-      "format": "haldclut"
     },
     {
       "id": "pack_gmic_colour",
@@ -55,6 +75,56 @@
       "contents": "RNI Films 免费版胶片预设（Portra/Gold/Ektar/Ilford 等）",
       "fileUrl": "",
       "format": "cube_bundle"
+    },
+    {
+      "id": "pack_logc3_arri_official",
+      "name": { "en": "ARRI LogC3 → Rec.709 (official LUT Generator)", "zh": "ARRI LogC3 → Rec.709（官方 LUT 生成器）" },
+      "sourceUrl": "https://www.arri.com/en/learn-help/learn-help-camera-system/tools/lut-generator",
+      "license": "ARRI official tool (free to use, redistribution restricted)",
+      "star": 0,
+      "contents": "LogC3/AWG3 → Gamma24 Rec.709 转换 LUT（33³ .cube），按需自行生成",
+      "fileUrl": "",
+      "format": "cube"
+    },
+    {
+      "id": "pack_vlog709_panasonic_official",
+      "name": { "en": "V-Log → V-709 (Panasonic official)", "zh": "V-Log → V-709（松下官方）" },
+      "sourceUrl": "https://av.jpn.support.panasonic.com/support/global/cs/dsc/download/lut/",
+      "license": "Panasonic official (free download)",
+      "star": 0,
+      "contents": "VLog_to_V709 / VLog_to_VLog 等官方转换 LUT",
+      "fileUrl": "",
+      "format": "cube"
+    },
+    {
+      "id": "pack_varicam_lut_library",
+      "name": { "en": "VariCam LUT Library (Panasonic official)", "zh": "VariCam LUT 库（松下官方）" },
+      "sourceUrl": "https://pro-av.panasonic.net/en/cinema_camera_varicam_eva/support/lut/",
+      "license": "Panasonic official (free download)",
+      "star": 0,
+      "contents": "VariCam 系列 V-Log/V-709 与风格 LUT 合集",
+      "fileUrl": "",
+      "format": "cube"
+    },
+    {
+      "id": "pack_hlg_bt2100_reference",
+      "name": { "en": "HLG → Rec.709 reference (BT.2408 anchor)", "zh": "HLG → Rec.709 参考（BT.2408 锚定）" },
+      "sourceUrl": "https://www.itu.int/rec/R-REC-BT.2408",
+      "license": "ITU-R recommendation (specification reference)",
+      "star": 0,
+      "contents": "BT.2408 漫反射白锚定规则；本模块机内烘焙 LUT 即按此实现",
+      "fileUrl": "",
+      "format": "reference_only"
+    },
+    {
+      "id": "pack_lutcalc_reference",
+      "name": { "en": "LUTCalc (algorithm reference only)", "zh": "LUTCalc（仅算法思路参考）" },
+      "sourceUrl": "https://github.com/cameramanben/LUTCalc",
+      "license": "GPL-2.0",
+      "star": 350,
+      "contents": "参考其「曲线 → LUT 采样」组织方式；**GPL 代码不落入源码树**",
+      "fileUrl": "",
+      "format": "reference_only"
     }
   ]
 }

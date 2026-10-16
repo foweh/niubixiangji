@@ -6,6 +6,10 @@ import kotlin.math.abs
 
 internal object RawGainmapMath {
     const val DOWNSAMPLE = 2
+    /** RAW 增益图降采样（默认 2 保持既有行为；可配 1/2/4/8）。 */
+    @Volatile var userDownsample: Int = DOWNSAMPLE
+
+    fun downsample(): Int = userDownsample.takeIf { it in intArrayOf(1, 2, 4, 8) } ?: DOWNSAMPLE
     const val MIN_GAIN_RATIO = 0.25f
     const val MAX_GAIN_RATIO = 4.0f
     const val OFFSET = 1e-4f

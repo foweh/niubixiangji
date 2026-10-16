@@ -47,6 +47,9 @@ import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
+import com.hinnka.mycamera.ui.viewfinder.ViewfinderOverlayController
+import com.hinnka.mycamera.ui.viewfinder.ViewfinderOverlayHost
+import com.hinnka.mycamera.viewfinder.ViewfinderSettings
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -338,10 +341,10 @@ fun CameraScreen(
     val isAstroScene = computationalScene == com.hinnka.mycamera.camera.ComputationalScene.ASTRO
     var astroOverlayVisible by remember { mutableStateOf(true) }
     var astroShowConstellations by remember { mutableStateOf(true) }
-    var starTrailsEnabled by remember { mutableStateOf(false) }
+    val starTrailsEnabled = viewModel.starTrailsEnabled
     // 服务器端增强：管线模块运行时上报能力（CameraState.serverEnhancementAvailable），
     // 无能力的机型自动隐藏入口。
-    var serverEnhancementEnabled by remember { mutableStateOf(false) }
+    val serverEnhancementEnabled = viewModel.serverEnhancementEnabled
     val serverEnhancementSupported = state.serverEnhancementAvailable
     // 多机型适配：PS 堆栈管线能力由 CameraState.supportsPsStack 运行时上报，无能力不显示 STACK 入口。
     val stackSupported = state.supportsPsStack
@@ -495,6 +498,15 @@ fun CameraScreen(
 
     val previewSize = state.currentPreviewSize
     val previewAspectRatio = state.getPreviewAspectRatio()
+        // 取景器辅助：斑马纹/峰值走 GL 补丁，直方图/AR 贴纸走本叠加层
+        val viewfinderSettings = remember { mutableStateOf(ViewfinderSettings()) }
+        val viewfinderController = remember { ViewfinderOverlayController(context) }
+        LaunchedEffect(viewfinderSettings.value) {
+            viewfinderController.updateSettings(viewfinderSettings.value)
+        }
+        DisposableEffect(Unit) {
+            onDispose { viewfinderController.close() }
+        }
     val previewTransitionCoverFractionState = animateFloatAsState(
         targetValue = when {
             previewTransitionActive && !previewTransitionRevealing -> 1f
@@ -1280,6 +1292,16 @@ fun CameraScreen(
                             isEyeFocusBusy = viewModel.isEyeFocusBusy,
                             isAutoFocus = state.isAutoFocus,
                             focusPeakingEnabled = focusPeakingEnabled && !state.isHyperfocalFocusEnabled,
+                            onViewfinderInputAvailable = { frame ->
+                                viewfinderController.onViewfinderFrame(
+                                    frame.bitmap,
+                                    frame.sampleStartedAtNanos / 1_000_000L
+                                )
+                                viewModel.glSurfaceView?.setViewfinderSampleBusy(false)
+                            },
+                            zebraConfig = viewfinderSettings.value.zebra,
+                            peakingEnhance = viewfinderSettings.value.peaking,
+                            peakingEnhancedEnabled = true,
                             stabilizationCoordinator = viewModel.realtimeStabilizationCoordinator,
                             stabilizationInputSize = if (
                                 state.captureMode == CaptureMode.VIDEO &&
@@ -1439,6 +1461,25 @@ fun CameraScreen(
                             )
                         }
 
+                        // 取景器辅助叠加（实时直方图 + AR 贴纸）；
+                        // 与网格/水平仪共用同一套 aspectRatio 居中裁切几何，天然对齐。
+                        ViewfinderOverlayHost(
+                            controller = viewfinderController,
+                            aspectRatio = previewAspectRatio,
+                            modifier = Modifier.fillMaxSize(),
+                        )
+
+                        // 模型不可用时的提示（不阻塞其它功能）
+                        viewfinderController.unavailableReason?.let { reason ->
+                            Text(
+                                text = reason,
+                                color = Color.White,
+                                modifier = Modifier
+                                    .align(Alignment.TopCenter)
+                                    .padding(top = 12.dp),
+                            )
+                        }
+
                         // 倒计时覆盖
                         if (state.countdownValue > 0) {
                             CountdownOverlay(
@@ -1476,11 +1517,11 @@ fun CameraScreen(
                                 isVideoMode = isVideoMode,
                                 rawVideoEnabled = viewModel.rawVideoMode,
                                 onRawVideoToggle = viewModel::updateRawVideoMode,
-                                starTrailsEnabled = starTrailsEnabled,
-                                onStarTrailsToggle = { starTrailsEnabled = it },
+                                starTrailsEnabled = viewModel.starTrailsEnabled,
+                                onStarTrailsToggle = viewModel::updateStarTrailsEnabled,
                                 serverEnhancementSupported = serverEnhancementSupported,
                                 serverEnhancementEnabled = serverEnhancementEnabled,
-                                onServerEnhancementToggle = { serverEnhancementEnabled = it },
+                                onServerEnhancementToggle = viewModel::updateServerEnhancementEnabled,
                                 stackSupported = stackSupported,
                                 stackType = viewModel.stackType,
                                 stackFrameCount = viewModel.stackFrameCount,
@@ -1516,20 +1557,47 @@ fun CameraScreen(
                                     .fillMaxSize()
                                     .background(Color(0xFF1A0505).copy(alpha = 0.35f))
                             )
+
+                            // ---- astronav 高精度指向接线（可选：关闭则回到既有内置链路）----
+                            val astroNavContext = LocalContext.current
+                            val astroNav = remember {
+                                com.hinnka.mycamera.astronav.AstroNavController(astroNavContext)
+                            }
+                            val astroNavUi by astroNav.state.collectAsState()
+                            DisposableEffect(astroNav) {
+                                astroNav.enable()
+                                onDispose { astroNav.release() } // release 内部 stop + 注销监听
+                            }
+                            val astroNavViewport = remember(astroNavUi.attitude) {
+                                com.hinnka.mycamera.astronav.AstroNavViewport(
+                                    displayRotationDegrees = state.displayRotationDegrees,
+                                    cameraAxis = com.hinnka.mycamera.astronav.CameraAxis.BACK,
+                                    horizontalFovDegrees = state.horizontalFovDegrees,
+                                )
+                            }
+
                             com.hinnka.mycamera.ui.astro.AstroOverlay(
-                                state = com.hinnka.mycamera.ui.astro.AstroOverlayState(
-                                    visible = astroOverlayVisible,
-                                    showConstellations = astroShowConstellations,
-                                    showLabels = astroShowConstellations
+                                state = com.hinnka.mycamera.astronav.AstroNavOverlayBridge.applyTo(
+                                    base = com.hinnka.mycamera.ui.astro.AstroOverlayState(
+                                        visible = astroOverlayVisible,
+                                        showConstellations = astroShowConstellations,
+                                        showLabels = astroShowConstellations
+                                    ),
+                                    inputs = com.hinnka.mycamera.astronav.AstroNavOverlayInputs(
+                                        attitude = astroNavUi.attitude,
+                                        location = astroNavUi.location,
+                                        viewport = astroNavViewport,
+                                        enabled = astroNavUi.enabled,
+                                    ),
                                 ),
                                 onVisibilityToggle = { astroOverlayVisible = it },
+                                matrixOverride = astroNavUi.attitude?.rotationMatrix, // null = 零回归
                                 modifier = Modifier.fillMaxSize()
                             )
-
                             // 拍星引导（三脚架固定拍摄流程，轻量不打断拍摄，随场景条一起隐藏）：
                             // ① 星图找方位 -> ② 架三脚架 -> ③ 关防抖长曝光/堆栈 -> ④ 后台进度 chip。
-                            val darkEnvironment = state.iso >= 1600 ||
-                                state.shutterSpeed > 1_500_000_000L
+                            val darkEnvironment = state.iso >= PhotographyThresholds.darkIso() ||
+                                state.shutterSpeed > PhotographyThresholds.darkShutterNs()
                             Column(
                                 modifier = Modifier
                                     .align(Alignment.BottomCenter)
@@ -1663,7 +1731,9 @@ fun CameraScreen(
                     }
 
                     if (enableDevelopAnimation && state.captureMode == CaptureMode.PHOTO) {
-                        viewModel.glSurfaceView?.capturePreviewFrame(maxLongEdge = 1440) { bitmap ->
+                        viewModel.glSurfaceView?.capturePreviewFrame(
+                            maxLongEdge = PreviewCaptureLimits.thumbLongEdge()
+                        ) { bitmap ->
                             if (scope.isActive && enableDevelopAnimation &&
                                 currentCaptureModeForEffects == CaptureMode.PHOTO
                             ) {
@@ -2003,6 +2073,15 @@ fun CameraScreen(
                                 enabled = !state.videoRecordingState.isRecording &&
                                     !state.videoRecordingState.isProcessing,
                                 onModeSelected = viewModel::setVideoLogLutMode
+                            )
+                            LogVideoCurveSelector(
+                                config = logVideoConfig,
+                                enabled = !state.videoRecordingState.isRecording &&
+                                    !state.videoRecordingState.isProcessing,
+                                baking = logVideoBaking,
+                                bakedLutId = logVideoBakedLutId,
+                                onConfigChange = viewModel::setLogVideoConfig,
+                                onBakeRestoreLut = viewModel::bakeLogRestoreLut,
                             )
                         }
                     } else null,
@@ -2896,4 +2975,22 @@ private fun Context.findActivity(): Activity? {
         context = context.baseContext
     }
     return null
+}
+
+
+/** 缩略图/预览长边上限（P2-6：默认 1440 与原硬编码一致，零回归）。 */
+object PreviewCaptureLimits {
+    const val DEFAULT_THUMB_LONG_EDGE = 1440
+    @Volatile var userThumbLongEdge: Int = DEFAULT_THUMB_LONG_EDGE
+    fun thumbLongEdge(): Int = userThumbLongEdge.coerceIn(320, 8192)
+}
+
+/** 取景器「暗环境」提示阈值（P2-8：默认 1600 / 1.5s 与原硬编码一致，零回归）。 */
+object PhotographyThresholds {
+    const val DEFAULT_DARK_ISO = 1600
+    const val DEFAULT_DARK_SHUTTER_NS = 1_500_000_000L
+    @Volatile var userDarkIso: Int = DEFAULT_DARK_ISO
+    @Volatile var userDarkShutterNs: Long = DEFAULT_DARK_SHUTTER_NS
+    fun darkIso(): Int = userDarkIso.coerceIn(100, 102_400)
+    fun darkShutterNs(): Long = userDarkShutterNs.coerceIn(1_000_000L, 60_000_000_000L)
 }

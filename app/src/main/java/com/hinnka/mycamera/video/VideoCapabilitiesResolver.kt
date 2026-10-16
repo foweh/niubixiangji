@@ -16,6 +16,11 @@ object VideoCapabilitiesResolver {
 
     private const val TAG = "VideoCapabilitiesResolver"
     private const val VIDEO_PREVIEW_SHORT_EDGE = 1080
+    /** 预览尺寸短边上限：默认 1080 保持既有行为；可上调（4K 预览需 HAL 支持）。 */
+    @Volatile var userVideoPreviewShortEdge: Int = VIDEO_PREVIEW_SHORT_EDGE
+    private fun videoPreviewShortEdge(): Int = userVideoPreviewShortEdge.coerceIn(480, 2160)
+
+    private const val OPTIMISTIC_FPS_THRESHOLD = 50   // 广告帧率达标即不再"乐观追加"档位
     private const val VIDEO_PREVIEW_ASPECT_TOLERANCE = 0.01f
 
     fun resolve(
@@ -247,7 +252,7 @@ object VideoCapabilitiesResolver {
         }
         val candidates = aspectMatchedSizes.ifEmpty { validSizes }
         val sizesWithinLimit = candidates.filter {
-            minOf(it.width, it.height) <= VIDEO_PREVIEW_SHORT_EDGE
+            minOf(it.width, it.height) <= videoPreviewShortEdge()
         }
 
         return if (sizesWithinLimit.isNotEmpty()) {
@@ -288,7 +293,7 @@ object VideoCapabilitiesResolver {
 
         if (strictAvailableFps.isNotEmpty()) {
             val advertisedMaxFps = strictAvailableFps.maxOf { it.fps }
-            if (advertisedMaxFps >= 50) {
+            if (advertisedMaxFps >= OPTIMISTIC_FPS_THRESHOLD) {
                 return strictAvailableFps
             }
 

@@ -1,0 +1,79 @@
+{
+  "ops_file": "galleryedit",
+  "dry_run": false,
+  "ok": 10,
+  "skip": 0,
+  "fail": 0,
+  "results": [
+    {
+      "i": 0,
+      "op": "x_insert_after",
+      "file": "app/src/main/AndroidManifest.xml",
+      "status": "OK",
+      "detail": "x_insert_after ×1 [exact] (delivery/patches/galleryedit_patch.md:50)"
+    },
+    {
+      "i": 1,
+      "op": "replace",
+      "file": "app/src/main/java/com/hinnka/mycamera/computational/BgJobRunner.kt",
+      "status": "OK",
+      "detail": "replace ×1 [exact]"
+    },
+    {
+      "i": 2,
+      "op": "x_insert_before",
+      "file": "app/src/main/res/values/strings.xml",
+      "status": "OK",
+      "detail": "x_insert_before ×1 [exact] (delivery/patches/galleryedit_patch.md:126)"
+    },
+    {
+      "i": 3,
+      "op": "x_insert_before",
+      "file": "app/src/main/res/values/strings.xml",
+      "status": "OK",
+      "detail": "x_insert_before ×1 [exact] (delivery/patches/galleryedit_patch.md:143)"
+    },
+    {
+      "i": 4,
+      "op": "x_insert_before",
+      "file": "app/src/main/res/values/strings.xml",
+      "status": "OK",
+      "detail": "x_insert_before ×1 [exact] (delivery/patches/galleryedit_patch.md:154)"
+    },
+    {
+      "i": 5,
+      "op": "x_insert_before",
+      "file": "app/src/main/res/values/strings.xml",
+      "status": "OK",
+      "detail": "x_insert_before ×1 [exact] (delivery/patches/galleryedit_patch.md:163)"
+    },
+    {
+      "i": 6,
+      "op": "x_insert_before",
+      "file": "app/src/main/res/values/strings.xml",
+      "status": "OK",
+      "detail": "x_insert_before ×1 [exact] (delivery/patches/galleryedit_patch.md:176)"
+    },
+    {
+      "i": 7,
+      "op": "x_insert_before",
+      "file": "app/src/main/res/values/strings.xml",
+      "status": "OK",
+      "detail": "x_insert_before ×1 [exact] (delivery/patches/galleryedit_patch.md:207)"
+    },
+    {
+      "i": 8,
+      "op": "x_insert_before",
+      "file": "app/src/main/res/values/strings.xml",
+      "status": "OK",
+      "detail": "x_insert_before ×1 [exact] (delivery/patches/galleryedit_patch.md:229)"
+    },
+    {
+      "i": 9,
+      "op": "x_insert_before",
+      "file": "app/src/main/res/values/strings.xml",
+      "status": "OK",
+      "detail": "x_insert_before ×1 [exact] (delivery/patches/galleryedit_patch.md:248)"
+    }
+  ]
+}

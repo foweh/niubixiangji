@@ -340,7 +340,13 @@ object GalleryMediaStore {
             spectralFilmPrint = metadata.spectralFilmPrint,
             spectralFilmCDensityGain = metadata.spectralFilmCDensityGain,
             spectralFilmMDensityGain = metadata.spectralFilmMDensityGain,
-            spectralFilmYDensityGain = metadata.spectralFilmYDensityGain
+            spectralFilmYDensityGain = metadata.spectralFilmYDensityGain,
+            // 相册域扩展列：目录标记直接取自产物目录名；分类名只透传生产方声明（无声明留 NULL，
+            // 由相册域按目录/文件名/既有元数据回退判定，避免在这里复制一份分类规则）
+            relativeDirTag = photoDir.parentFile?.name?.takeIf { it.isNotBlank() },
+            processingType = metadata.customProperties[
+                "processingType"
+            ]?.takeIf { it.isNotBlank() }
         )
     }
 
@@ -543,10 +549,26 @@ object GalleryMediaStore {
             spectralFilmPrint = spectralFilmPrint,
             spectralFilmCDensityGain = spectralFilmCDensityGain,
             spectralFilmMDensityGain = spectralFilmMDensityGain,
-            spectralFilmYDensityGain = spectralFilmYDensityGain
+            spectralFilmYDensityGain = spectralFilmYDensityGain,
+            customProperties = customPropertiesOf(this, customProperties)
         )
     }
 
+    /**
+     * 合并既有自定义属性与相册域扩展列。
+     *
+     * 相册域扩展列（`processingType` / `relativeDirTag`）语义上属于自定义属性，
+     * 读回时并入，避免「写入 → 读回」丢字段；同名键以列值为准。
+     */
+    private fun customPropertiesOf(
+        entity: GalleryMediaEntity,
+        encoded: String?,
+    ): Map<String, String> {
+        val decoded = GalleryDelimitedCodec.decodeMap(encoded).toMutableMap()
+        entity.processingType?.takeIf { it.isNotBlank() }?.let { decoded["processingType"] = it }
+        entity.relativeDirTag?.takeIf { it.isNotBlank() }?.let { decoded["relativeDirTag"] = it }
+        return decoded
+    }
     private fun rectOrNull(left: Int?, top: Int?, right: Int?, bottom: Int?): Rect? {
         if (left == null || top == null || right == null || bottom == null) return null
         return Rect(left, top, right, bottom)

@@ -22,6 +22,7 @@ internal object LutShaderMappings {
             ColorSpace.VGamut -> 7
             ColorSpace.RED -> 9
             ColorSpace.FilmLightEGamut -> 0
+            ColorSpace.ARRI3 -> 12
         }
     }
 }

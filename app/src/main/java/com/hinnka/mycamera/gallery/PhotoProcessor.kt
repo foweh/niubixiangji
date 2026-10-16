@@ -30,6 +30,10 @@ import com.hinnka.mycamera.raw.RawOutputScaling
 import com.hinnka.mycamera.raw.RawDigitalZoomResampling
 import com.hinnka.mycamera.raw.RawDemosaicProcessor
 import com.hinnka.mycamera.raw.RawHdrRenderResult
+import com.hinnka.mycamera.enhance.EnhanceConfig
+import com.hinnka.mycamera.enhance.PhotoPostProcessEntry
+import com.hinnka.mycamera.lenscorrection.LensCorrectionSettings
+import com.hinnka.mycamera.lenscorrection.LensDimensionResolver
 import com.hinnka.mycamera.raw.RawMetadata
 import com.hinnka.mycamera.raw.RawPhotonHdrMetadata
 import com.hinnka.mycamera.raw.RawNoiseProfileManager
@@ -797,6 +801,27 @@ class PhotoProcessor(
         }
 
         result = applyPostEditGeometry(result, metadata, "bitmap")
+        // —— 经典后处理 + 镜头畸变校正（模块：enhance / lenscorrection）——
+        // 顺序固定为「先几何校正、再色调风格」，由 PhotoPostProcessEntry 内部保证。
+        // 默认不改变用户照片：只有 DataStore 里 enhance_enabled 为 true 时才真正处理。
+        val enhancePrefs: Map<String, Any?> = emptyMap() // TODO 集成阶段替换为 DataStore 快照（key 清单见 CONFIG 节）
+        val enhanceConfig = if (enhancePrefs[EnhanceConfig.KEY_ENABLED] == true) {
+            EnhanceConfig.fromPreferences(enhancePrefs)
+        } else {
+            EnhanceConfig(enabled = false)
+        }
+        val lensConfig = LensCorrectionSettings.fromPreferences(enhancePrefs)
+            // 镜头维度取自 EXIF 等效焦距；解析不出时回退主摄（不校正超广角=最小风险）
+            .forDimension(
+                LensDimensionResolver.fromEquivalentFocalLengthMm(metadata.focalLength35mm?.toFloatOrNull())
+            )
+            .takeIf { it.isActive() }
+        val enhanced = PhotoPostProcessEntry.applySync(
+            source = result,
+            enhance = enhanceConfig,
+            lens = lensConfig,
+        )
+        if (enhanced !== result) result = enhanced
         if (applyFrameWatermark) {
             result = applyFrame(result, metadata)
         }

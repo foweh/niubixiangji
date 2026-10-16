@@ -29,12 +29,18 @@ const val DEFAULT_VIDEO_STABILIZATION_STRENGTH = 1f
 const val DEFAULT_VIDEO_STABILIZATION_LOOKAHEAD = 7
 const val MIN_VIDEO_STABILIZATION_LOOKAHEAD = 3
 const val MAX_VIDEO_STABILIZATION_LOOKAHEAD = 10
+@Volatile var userMaxStabilizationLookahead: Int = MAX_VIDEO_STABILIZATION_LOOKAHEAD
+@Volatile var userMaxStabilizationStrength: Float = 1f
+@Volatile var userMaxStabilizationBufferCount: Int = 90
+fun maxStabilizationLookahead(): Int = userMaxStabilizationLookahead.coerceIn(1, 64)
+fun maxStabilizationStrength(): Float = userMaxStabilizationStrength.coerceIn(0f, 2f)
+fun maxStabilizationBufferCount(): Int = userMaxStabilizationBufferCount.coerceIn(16, 4096)
 
 fun normalizeStabilizationStrength(strength: Float): Float =
-    if (strength.isFinite()) strength.coerceIn(0f, 1f) else DEFAULT_VIDEO_STABILIZATION_STRENGTH
+    if (strength.isFinite()) strength.coerceIn(0f, maxStabilizationStrength()) else DEFAULT_VIDEO_STABILIZATION_STRENGTH
 
 fun normalizeStabilizationLookahead(lookahead: Int): Int =
-    lookahead.coerceIn(MIN_VIDEO_STABILIZATION_LOOKAHEAD, MAX_VIDEO_STABILIZATION_LOOKAHEAD)
+    lookahead.coerceIn(1, maxStabilizationLookahead())
 
 enum class StabilizationUseCase(
     internal val defaultStrength: Float,
@@ -582,7 +588,7 @@ class RealtimeStabilizationCoordinator(context: Context) {
             }
             frameMetadata[timestampNs] = metadata
             latestMetadataTimestampNs = maxOf(latestMetadataTimestampNs, timestampNs)
-            trimOldest(frameMetadata, MAX_METADATA_COUNT)
+            trimOldest(frameMetadata, maxStabilizationBufferCount())
             drainFramesLocked(lastFrameBoundaryNs)
         }
     }
@@ -983,7 +989,7 @@ class RealtimeStabilizationCoordinator(context: Context) {
     private fun appendNativeResultLocked(result: MgcEisNativeEngine.FrameResult) {
         resultSequence += 1L
         nativeResults.addLast(SequencedNativeResult(resultSequence, result))
-        while (nativeResults.size > MAX_RESULT_COUNT) nativeResults.removeFirst()
+        while (nativeResults.size > maxStabilizationBufferCount()) nativeResults.removeFirst()
         activeSessions.values.forEach { callback ->
             try {
                 callback?.invoke()

@@ -1,0 +1,58 @@
+{
+  "ops_file": "aiplatform_d",
+  "dry_run": false,
+  "ok": 7,
+  "skip": 0,
+  "fail": 0,
+  "results": [
+    {
+      "i": 0,
+      "op": "x_replace",
+      "file": "app/src/main/java/com/hinnka/mycamera/ui/camera/CameraParameterBar.kt",
+      "status": "OK",
+      "detail": "x_replace ×1 [exact] (delivery/patches/aiplatform_patch.md:1091)"
+    },
+    {
+      "i": 1,
+      "op": "insert_after",
+      "file": "app/src/main/java/com/hinnka/mycamera/ui/camera/CameraParameterBar.kt",
+      "status": "OK",
+      "detail": "insert_after ×1 [exact]"
+    },
+    {
+      "i": 2,
+      "op": "x_insert_after",
+      "file": "app/src/main/java/com/hinnka/mycamera/camera/Camera2Controller.kt",
+      "status": "OK",
+      "detail": "x_insert_after ×1 [exact] (delivery/patches/aiplatform_patch.md:1118)"
+    },
+    {
+      "i": 3,
+      "op": "insert_after",
+      "file": "app/src/main/java/com/hinnka/mycamera/camera/Camera2Controller.kt",
+      "status": "OK",
+      "detail": "insert_after ×1 [exact]"
+    },
+    {
+      "i": 4,
+      "op": "extract",
+      "file": "app/src/main/java/com/hinnka/mycamera/net/HttpDownloadSpec.kt",
+      "status": "OK",
+      "detail": "extract 3588 bytes (delivery/patches/aiplatform_patch.md:1144)"
+    },
+    {
+      "i": 5,
+      "op": "x_replace_lit",
+      "file": "app/src/main/java/com/hinnka/mycamera/ml/DepthModelManager.kt",
+      "status": "OK",
+      "detail": "x_replace ×1 [exact] (delivery/patches/aiplatform_patch.md:1250)"
+    },
+    {
+      "i": 6,
+      "op": "insert_after",
+      "file": "app/src/main/java/com/hinnka/mycamera/ml/DepthModelManager.kt",
+      "status": "OK",
+      "detail": "insert_after ×1 [exact]"
+    }
+  ]
+}

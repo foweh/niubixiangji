@@ -4,4 +4,7 @@
     <cache-path name="shared_images" path="shared/" />
     <cache-path name="updates" path="updates/" />
     <external-files-path name="downloaded_updates" path="Download/updates/" />
+    <external-files-path name="appgallery_trash" path="Pictures/appgallery_trash/" />
+    <external-files-path name="appgallery_backup" path="Pictures/appgallery_backup/" />
+    <external-files-path name="appgallery_thumbs" path="Pictures/appgallery_thumbs/" />
 </paths>

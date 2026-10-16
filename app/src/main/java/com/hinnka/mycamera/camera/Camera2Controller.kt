@@ -39,10 +39,15 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import com.hinnka.mycamera.livephoto.LivePhotoRecorder
 import com.hinnka.mycamera.lut.LutConfig
 import com.hinnka.mycamera.lut.VideoColorEffectLayer
+import com.hinnka.mycamera.logvideo.LogVideoConfigStore
+import com.hinnka.mycamera.logvideo.LogVideoLayerFactory
+import com.hinnka.mycamera.logvideo.LogVideoLutDecision
 import com.hinnka.mycamera.model.SafeImage
 import com.hinnka.mycamera.model.ColorRecipeParams
 import com.hinnka.mycamera.processor.MgcRawMaxMode
 import com.hinnka.mycamera.processor.MultiFrameStacker
+import com.hinnka.mycamera.processor.ComputationalStackRouter
+import com.hinnka.mycamera.aiwb.AiWhiteBalanceAnalyzer
 import com.hinnka.mycamera.video.RawVideoRecorder
 import com.hinnka.mycamera.stabilization.ExternalLensStabilizationConfig
 import com.hinnka.mycamera.stabilization.RealtimeStabilizationCoordinator
@@ -104,7 +109,17 @@ class Camera2Controller(private val context: Context) {
 
         private const val CAPTURE_READER_MAX_IMAGES = 50
         private const val CAPTURE_IMAGE_DELIVERY_TIMEOUT_MS = 10_000L
+        /** 单张图片交付超时（P2-2：开放可配，默认 10s 零回归）。 */
+        @Volatile var userCaptureImageDeliveryTimeoutMs: Long = CAPTURE_IMAGE_DELIVERY_TIMEOUT_MS
+        fun captureImageDeliveryTimeoutMs(): Long =
+            userCaptureImageDeliveryTimeoutMs.coerceIn(1_000L, 60_000L)
         private const val BURST_CAPTURE_BATCH_SIZE = 8
+        /**
+         * 单次 submitPhotoCapture 允许提交的最大请求数（受 ImageReader 容量限制）。
+         * 这是**分片大小**，不是总帧数上限：取值 = CAPTURE_READER_MAX_IMAGES，
+         * 因此默认配置下与改动前逐字节同行为（不再对超量请求直接拒拍）。
+         */
+        private const val MULTI_FRAME_CAPTURE_BATCH_MAX = CAPTURE_READER_MAX_IMAGES
 
         // 拍照状态机常量
         private const val PRECAPTURE_TIMEOUT_MS = 3_000L
@@ -124,6 +139,21 @@ class Camera2Controller(private val context: Context) {
         private const val AF_REGION_HEIGHT_FRACTION = 0.10f
         private const val VIDEO_AF_REGION_FRACTION = 0.25f   // A1：视频中心连续追焦区域（占画面比例）
         private const val AF_READY_DEFER_MS = 220L           // A1：AF 未收敛时快门最长推迟等待
+        /** 以下对焦/测光/场景参数开放可配（默认值＝原常量，零回归）。 */
+        @Volatile var userAfReadyDeferMs: Long = AF_READY_DEFER_MS
+        @Volatile var userFocusLockSettleFrames: Int = FOCUS_LOCK_SETTLE_FRAMES
+        @Volatile var userSceneChangeConfirmFrames: Int = SCENE_CHANGE_CONFIRM_FRAMES
+        @Volatile var userAfRegionWidthFraction: Float = AF_REGION_WIDTH_FRACTION
+        @Volatile var userAfRegionHeightFraction: Float = AF_REGION_HEIGHT_FRACTION
+        @Volatile var userVideoAfRegionFraction: Float = VIDEO_AF_REGION_FRACTION
+        @Volatile var userPrecaptureMaxWaitFrames: Long = PRECAPTURE_MAX_WAIT_FRAMES
+        fun afReadyDeferMs(): Long = userAfReadyDeferMs.coerceIn(0L, 5_000L)
+        fun focusLockSettleFrames(): Int = userFocusLockSettleFrames.coerceIn(0, 60)
+        fun sceneChangeConfirmFrames(): Int = userSceneChangeConfirmFrames.coerceIn(1, 30)
+        fun afRegionWidthFraction(): Float = userAfRegionWidthFraction.coerceIn(0.01f, 0.5f)
+        fun afRegionHeightFraction(): Float = userAfRegionHeightFraction.coerceIn(0.01f, 0.5f)
+        fun videoAfRegionFraction(): Float = userVideoAfRegionFraction.coerceIn(0.05f, 0.8f)
+        fun precaptureMaxWaitFrames(): Long = userPrecaptureMaxWaitFrames.coerceIn(5L, 600L)
         private const val SPOT_AE_REGION_FRACTION = 0.06f
         private const val CENTER_WEIGHTED_AE_REGION_FRACTION = 0.40f
         private const val HIGHLIGHT_AE_REGION_FRACTION = 0.16f
@@ -646,7 +676,7 @@ class Camera2Controller(private val context: Context) {
                 disposeFailedPhotoCapture(shot)
             }
             shot.timeout = timeout
-            cameraHandler?.postDelayed(timeout, CAPTURE_IMAGE_DELIVERY_TIMEOUT_MS)
+            cameraHandler?.postDelayed(timeout, captureImageDeliveryTimeoutMs())
         }
     }
 
@@ -689,7 +719,7 @@ class Camera2Controller(private val context: Context) {
                     disposeFailedPhotoCapture(shot)
                 }
                 shot.timeout = timeout
-                cameraHandler?.postDelayed(timeout, CAPTURE_IMAGE_DELIVERY_TIMEOUT_MS)
+                cameraHandler?.postDelayed(timeout, captureImageDeliveryTimeoutMs())
             }
         }
         if (shot.continuousBurst) {
@@ -943,7 +973,7 @@ class Camera2Controller(private val context: Context) {
                         PLog.w(TAG, "Discarding image without a capture request: timestamp=$timestamp")
                         image.close()
                     }
-                }, CAPTURE_IMAGE_DELIVERY_TIMEOUT_MS)
+                }, captureImageDeliveryTimeoutMs())
             }
         }
     }
@@ -1099,7 +1129,8 @@ class Camera2Controller(private val context: Context) {
     private fun captureImageRequestCount(state: CameraState, reader: ImageReader): Int = when {
         shouldUseJpgMaxHdrCapture(state, isRawCaptureReader(reader)) && !shouldUseMultiFrameTorch(state) ->
             buildHdrBracketEvOffsets(resolveHdrBracketZeroEvFrameCount(state)).size
-        state.requiresMultiFrameCaptureSequence -> state.activeMultiFrameCount
+        state.requiresMultiFrameCaptureSequence ->
+            minOf(state.activeMultiFrameCount, MULTI_FRAME_CAPTURE_BATCH_MAX)
         else -> 1
     }
 
@@ -1257,7 +1288,7 @@ class Camera2Controller(private val context: Context) {
                             sceneChangeFrameCount = 0
                         } else {
                             sceneChangeFrameCount++
-                            if (sceneChangeFrameCount >= SCENE_CHANGE_CONFIRM_FRAMES) {
+                            if (sceneChangeFrameCount >= sceneChangeConfirmFrames()) {
                                 restoreContinuousAf()
                             }
                         }
@@ -1439,7 +1470,7 @@ class Camera2Controller(private val context: Context) {
                 }
             }
         }
-        if (result.frameNumber - pending.firstResultFrameNumber!! > PRECAPTURE_MAX_WAIT_FRAMES) {
+        if (result.frameNumber - pending.firstResultFrameNumber!! > precaptureMaxWaitFrames()) {
             onStillFlashPhaseTimeout(pending, "frame limit")
         }
     }
@@ -3969,6 +4000,8 @@ class Camera2Controller(private val context: Context) {
 
         // 2. 白平衡设置
         applyWhiteBalanceSettings(builder, currentState, isCapture)
+        // 2.5 AI 白平衡（aiplatform_patch.md，默认关闭；仅在开关开启且缓存中有高置信度估计时才写入参数）
+        AiWhiteBalanceAnalyzer.applyToCaptureRequest(builder)
 
         // 3. 闪光灯设置（触发权限与 AE 模式分开控制）
         applyFlashSettings(builder, currentState, isCapture, useStillFlashTrigger)
@@ -4188,6 +4221,12 @@ class Camera2Controller(private val context: Context) {
     }
 
     private fun resolveAwbTemperatureRange(): Range<Int> {
+        // 优先设备上报范围（Android 16 / COLOR_CORRECTION_COLOR_TEMPERATURE_RANGE）；
+        // 未上报时回退既有默认 2000-8000（零回归）。
+        val advertised = awbColorTemperatureRange
+        if (advertised != null && advertised.lower < advertised.upper) {
+            return advertised
+        }
         return Range(AWB_TEMPERATURE_MIN, AWB_TEMPERATURE_MAX)
     }
 
@@ -4378,8 +4417,8 @@ class Camera2Controller(private val context: Context) {
                 ?.get(CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE)
                 ?.takeIf { !it.isEmpty }
             ?: return null
-        val w = (bounds.width() * VIDEO_AF_REGION_FRACTION).toInt().coerceAtLeast(1)
-        val h = (bounds.height() * VIDEO_AF_REGION_FRACTION).toInt().coerceAtLeast(1)
+        val w = (bounds.width() * videoAfRegionFraction()).toInt().coerceAtLeast(1)
+        val h = (bounds.height() * videoAfRegionFraction()).toInt().coerceAtLeast(1)
         val cx = bounds.centerX()
         val cy = bounds.centerY()
         val left = (cx - w / 2).coerceAtLeast(bounds.left)
@@ -4518,8 +4557,17 @@ class Camera2Controller(private val context: Context) {
         useStillFlashAeMode: Boolean = isCapture
     ) {
         if (state.captureMode == CaptureMode.VIDEO) {
-            applyVideoFpsRange(builder, state.videoConfig.fps.fps)
-        }
+            // videomodes §1：按能力解析生效帧率（不足的档位已在 UI 隐藏，此处兜底取可用档位）。
+            val fpsCapability = state.videoModesFpsCapability
+            val effectiveFps = fpsCapability?.availableFps?.let { avail ->
+                if (avail.contains(state.videoConfig.fps.fps)) {
+                    state.videoConfig.fps.fps
+                } else {
+                    avail.minByOrNull { kotlin.math.abs(it - state.videoConfig.fps.fps) }
+                        ?: state.videoConfig.fps.fps
+                }
+            } ?: state.videoConfig.fps.fps
+            applyVideoFpsRange(builder, effectiveFps)        }
 
         val effectiveUseStillFlashAeMode = useStillFlashAeMode ||
             (!isCapture && shouldUsePreviewStillFlashAeMode(state))
@@ -4564,7 +4612,12 @@ class Camera2Controller(private val context: Context) {
 
                 // 预览时限制曝光时间，防止画面卡死；拍摄时使用完整的用户设置
                 val exposureTime = if (isCapture) {
-                    state.shutterSpeed
+                    // ASTRO：单帧曝光上限（可配，默认 0.5s）——原 astroPerFrameMaxExposureNs 死常量在此真正生效。
+                    if (activeScene == ComputationalScene.ASTRO) {
+                        clampAstroPerFrameExposure(state.shutterSpeed)
+                    } else {
+                        state.shutterSpeed
+                    }
                 } else {
                     coercePreviewExposureTime(state)
                 }
@@ -6211,7 +6264,7 @@ class Camera2Controller(private val context: Context) {
     }
 
     private fun kelvinToNormalizedRgb(kelvin: Int): NormalizedRgb {
-        val temperature = kelvin.coerceIn(1000, 40000) / 100.0f
+        val temperature = kelvin.coerceIn(1000, 40_000) / 100.0f   // 仅算法域下限/上限，不参与 UI 范围
 
         var red: Float
         var green: Float
@@ -6607,7 +6660,7 @@ class Camera2Controller(private val context: Context) {
     private fun recordFocusLockExposure(result: CaptureResult) {
         updateFocusLockSceneReference(result)
         isFocusLockedWaitingForSceneChange = true
-        focusLockSettleFrames = FOCUS_LOCK_SETTLE_FRAMES
+        focusLockSettleFrames = focusLockSettleFrames()
         sceneChangeFrameCount = 0
     }
 
@@ -6716,12 +6769,12 @@ class Camera2Controller(private val context: Context) {
         val generation = ++afReadyWaitGeneration
         cameraHandler?.postDelayed({
             if (generation == afReadyWaitGeneration && pendingCaptureAfterAfReady != null) {
-                PLog.w(TAG, "AF ready wait timed out after ${AF_READY_DEFER_MS}ms, releasing shutter")
+                PLog.w(TAG, "AF ready wait timed out after ${afReadyDeferMs()}ms, releasing shutter")
                 val pending = pendingCaptureAfterAfReady
                 pendingCaptureAfterAfReady = null
                 pending?.invoke()
             }
-        }, AF_READY_DEFER_MS)
+        }, afReadyDeferMs())
         return true
     }
 
@@ -6912,8 +6965,8 @@ class Camera2Controller(private val context: Context) {
             // AF 区域保持为可见画面的 10%，避免 SCALER_CROP_REGION 变焦后区域相对画面膨胀。
             val afRect = PreviewMeteringMapper.buildCenteredRegion(
                 mapping = mapping,
-                widthFraction = AF_REGION_WIDTH_FRACTION,
-                heightFraction = AF_REGION_HEIGHT_FRACTION,
+                widthFraction = afRegionWidthFraction(),
+                heightFraction = afRegionHeightFraction(),
             ).toAndroidRect()
             val afRegion = MeteringRectangle(afRect, MeteringRectangle.METERING_WEIGHT_MAX)
 
@@ -7105,6 +7158,15 @@ class Camera2Controller(private val context: Context) {
     }
 
     fun setVideoLogProfile(logProfile: VideoLogProfile) {
+        // 档位切换 → 同步本模块的曲线/还原 LUT 选择（按档位推荐曲线，用户手动改动优先）
+        LogVideoConfigStore.update { current ->
+            current.copy(
+                enabled = appliedProfile.isEnabled,
+                curve = current.curve.copy(
+                    preset = LogVideoLutDecision.recommendedPreset(appliedProfile) ?: current.curve.preset,
+                ),
+            )
+        }
         val previousProfile = _state.value.videoConfig.logProfile
         val resolvedProfile = if (_state.value.captureMode == CaptureMode.VIDEO) {
             logProfile
@@ -7310,6 +7372,35 @@ class Camera2Controller(private val context: Context) {
 
     @Volatile
     private var activeScene: ComputationalScene = ComputationalScene.STANDARD
+
+    /** 星轨叠加开关（P0-4/P0-7：与 gallery 路由共用；由 updateStarTrailsEnabled 写入）。 */
+    @Volatile
+    private var starTrailsEnabled: Boolean = false
+    @Volatile
+    private var trailAccumulationMode: AstroStacker.TrailAccumulationMode =
+        AstroStacker.TrailAccumulationMode.LIGHTEN_MAX
+
+    fun updateStarTrailsEnabled(enabled: Boolean) {
+        starTrailsEnabled = enabled
+        if (enabled) {
+            // 星轨必须免对齐（星点位移就是要保留的结果）。
+            psStackAlign = false
+        }
+    }
+
+    fun updateTrailAccumulationMode(mode: AstroStacker.TrailAccumulationMode) {
+        trailAccumulationMode = mode
+    }
+
+    /** 进入计算场景前的用户基线快照（离开场景时还原，避免策略静默改写用户设置）。 */
+    private var sceneBaseline: SceneBaseline? = null
+
+    private data class SceneBaseline(
+        val useRaw: Boolean,
+        val jpgFrames: Int,
+        val hdrPlusFrames: Int,
+        val previewStabilization: Boolean,
+    )
     @Volatile
     private var rawVideoModeRequested: Boolean = false
     @Volatile
@@ -7318,9 +7409,15 @@ class Camera2Controller(private val context: Context) {
     private var psStackFrameCount: Int = MultiFrameConfig.DEFAULT_DENOISE_FRAME_COUNT
     // 拍星星主流程=三脚架固定拍摄：默认免对齐（星星位移就是要的结果），对齐仅作可选增强。
     @Volatile
-    private var psStackAlign: Boolean = false
+    private var psStackAlign: Boolean = MultiFrameConfig.DEFAULT_STACK_ALIGN
     // ASTRO：单帧短曝光上限（≤1/2s），多帧 8~16 帧对齐堆栈，避免拖星。
-    private val astroPerFrameMaxExposureNs = 500_000_000L
+    /** ASTRO 单帧曝光上限：默认 0.5s（可配；0 或负数表示不限制）。 */
+    @Volatile
+    var astroPerFrameMaxExposureNs: Long = 500_000_000L
+
+    /** ASTRO 采帧时对单帧曝光做 clamp（单一真值源；不再有"声明未接线"的常量）。 */
+    private fun clampAstroPerFrameExposure(ns: Long): Long =
+        if (astroPerFrameMaxExposureNs <= 0L) ns else ns.coerceAtMost(astroPerFrameMaxExposureNs)
     private var rawVideoReader: ImageReader? = null
     private var rawVideoRecorder: RawVideoRecorder? = null
 
@@ -7433,18 +7530,39 @@ class Camera2Controller(private val context: Context) {
             scene == ComputationalScene.STACK
         // 拍星星主流程=三脚架固定：ASTRO/STACK 关闭算法 EIS/超防抖，避免防抖平移与固定机位冲突。
         val tripodFixed = scene == ComputationalScene.ASTRO || scene == ComputationalScene.STACK
+        val baseline = sceneBaseline ?: SceneBaseline(
+            useRaw = state.useRaw,
+            jpgFrames = state.jpgMultiFrameDenoiseFrameCount,
+            hdrPlusFrames = state.hdrPlusFrameCount,
+            previewStabilization = state.photoPreviewStabilizationEnabled,
+        ).also { sceneBaseline = it }
+
+        val leaveScene = scene == ComputationalScene.STANDARD ||
+            scene == ComputationalScene.HDR ||
+            scene == ComputationalScene.PORTRAIT
         _state.value = state.copy(
-            useRaw = preferRaw && supportsRawMultiFrame(),
-            jpgMultiFrameDenoiseFrameCount =
-                if (scene == ComputationalScene.STACK) psStackFrameCount else state.jpgMultiFrameDenoiseFrameCount,
-            hdrPlusFrameCount =
-                if (scene == ComputationalScene.STACK ||
-                    scene == ComputationalScene.NIGHT ||
-                    scene == ComputationalScene.ASTRO
-                ) psStackFrameCount.coerceAtLeast(3) else state.hdrPlusFrameCount,
+            useRaw = if (leaveScene) baseline.useRaw else (preferRaw && supportsRawMultiFrame()),
+            jpgMultiFrameDenoiseFrameCount = if (scene == ComputationalScene.STACK) {
+                psStackFrameCount
+            } else {
+                baseline.jpgFrames
+            },
+            hdrPlusFrameCount = if (scene == ComputationalScene.STACK ||
+                scene == ComputationalScene.NIGHT ||
+                scene == ComputationalScene.ASTRO
+            ) {
+                // 帧数开放：不再用 coerceAtLeast(3) 魔法数，统一走配置侧最小帧数（包围曝光时最小 2）。
+                MultiFrameConfig.normalizeHdrPlusFrameCount(
+                    psStackFrameCount,
+                    bracketExposureEnabled = state.isHdrPlusBracketExposureEnabled,
+                )
+            } else {
+                baseline.hdrPlusFrames
+            },
             isVirtualApertureEnabled = scene == ComputationalScene.PORTRAIT,
-            photoPreviewStabilizationEnabled = if (tripodFixed) false else state.photoPreviewStabilizationEnabled,
+            photoPreviewStabilizationEnabled = if (tripodFixed) false else baseline.previewStabilization,
         )
+        if (leaveScene) sceneBaseline = null
     }
 
     /**
@@ -7466,7 +7584,7 @@ class Camera2Controller(private val context: Context) {
     fun applyPostFilterSharpeningHook(): Boolean = postFilterSharpeningEnabled
 
     /**
-     * 计算摄影堆栈调度（internal，gallery/同模块在连拍完成后调用；A1 提供的调用点）。
+     * 计算摄影堆栈调度（internal；由 GalleryManager 经 ComputationalStackRouter 调用，A1 提供的调用点）。
      *
      * 输入：已对齐/待对齐的一帧序列（RAW 或 YUV SafeImage，STACK/ASTRO 场景由本控制器规划）。
      * 返回：堆栈合成结果 Bitmap；返回 null 表示当前场景不做堆栈或堆栈失败，调用方据此回退单帧。
@@ -7485,24 +7603,20 @@ class Camera2Controller(private val context: Context) {
     ): android.graphics.Bitmap? {
         if (frames.isEmpty()) return null
         return runCatching {
-            when (activeScene) {
-                ComputationalScene.STACK -> MultiFrameStacker.processPsStack(
-                    images = frames,
-                    rotation = rotation,
-                    aspectRatio = aspectRatio,
-                    colorSpace = colorSpace,
-                    type = psStackType,
+            ComputationalStackRouter.route(
+                request = ComputationalStackRouter.StackRequest(
+                    scene = activeScene,
+                    stackType = psStackType,
                     frameCount = psStackFrameCount,
                     align = psStackAlign,
-                )
-                ComputationalScene.ASTRO -> MultiFrameStacker.processAstroBurst(
-                    images = frames,
-                    rotation = rotation,
-                    aspectRatio = aspectRatio,
-                    colorSpace = colorSpace,
-                )
-                else -> null
-            }
+                    starTrailsEnabled = starTrailsEnabled,
+                    trailAccumulationMode = trailAccumulationMode,
+                ),
+                images = frames,
+                rotation = rotation,
+                aspectRatio = aspectRatio,
+                colorSpace = colorSpace,
+            )
         }.onFailure { e ->
             PLog.w(TAG, "Computational stack dispatch failed (scene=$activeScene)", e)
         }.getOrNull()
@@ -7579,12 +7693,30 @@ class Camera2Controller(private val context: Context) {
             !monitorOnly && logProfile.matchesLut(it.curve, it.colorSpace)
         }
         val recordingRecipe = creativeRecipeParams.takeUnless { monitorOnly }
-        val colorLayers = buildList {
-            if (recordingLut != null || recordingRecipe?.isDefault() == false) {
-                add(VideoColorEffectLayer(recordingLut, recordingRecipe))
+        // Log 视频：由本模块统一决定「LUT 是否进片 / 配方是否进片 / 生效强度」，
+        // 非 Log 档位行为与原实现完全一致（等价于上面的 buildList）。
+        val logConfig = LogVideoConfigStore.current
+        val colorLayers = if (logProfile.isEnabled) {
+            LogVideoLayerFactory.recordingLayers(
+                logProfile = logProfile,
+                config = logConfig,
+                monitorLut = creativeLutConfig,
+                monitorRecipe = creativeRecipeParams,
+            )
+        } else {
+            buildList {
+                if (recordingLut != null || recordingRecipe?.isDefault() == false) {
+                    add(VideoColorEffectLayer(recordingLut, recordingRecipe))
+                }
             }
         }
-        PLog.d(
+        val bakedDecision = LogVideoLutDecision.decide(
+            profile = logProfile,
+            config = logConfig,
+            lutCurve = creativeLutConfig?.curve,
+            lutColorSpace = creativeLutConfig?.colorSpace,
+            lutAvailable = creativeLutConfig != null,
+        )        PLog.d(
             TAG,
             "Video color output: log=${logProfile.name}, mode=${_state.value.videoConfig.logLutMode}, " +
                 "monitorLut=${creativeLutConfig?.title}, recordingLut=${recordingLut?.title}"
@@ -7597,9 +7729,10 @@ class Camera2Controller(private val context: Context) {
             codecMime = _state.value.videoConfig.codec.mimeType,
             colorConfig = VideoEncoderColorRequest(
                 logProfile = logProfile,
-                hasActiveLut = recordingLut != null && (recordingRecipe?.lutIntensity ?: 1f) > 0f
-            ),
-            colorLayers = colorLayers,
+                // 只有「LUT 确实烘焙进片」时才标为显示域；纯 Log 灰片保持 hasActiveLut=false → CUSTOM_LOG
+                hasActiveLut = bakedDecision.bakeLutIntoRecording &&
+                    bakedDecision.effectiveIntensity > 0f
+            ),            colorLayers = colorLayers,
             cameraTimestampSource = getActiveOpenCameraCharacteristics()
                 ?.get(CameraCharacteristics.SENSOR_INFO_TIMESTAMP_SOURCE)
                 ?: CameraCharacteristics.SENSOR_INFO_TIMESTAMP_SOURCE_UNKNOWN,
@@ -8070,7 +8203,7 @@ class Camera2Controller(private val context: Context) {
         // A1 修复(c)：快门就绪门控 —— AF 仍在追焦/未收敛时推迟快门，避免镜头移动中触发造成
         // 拍摄震动模糊；连拍(burst)同样受益（对焦稳定后再连续释放）。
         if (!isShutterAfReady()) {
-            PLog.d(TAG, "AF not converged; gating shutter, deferring up to ${AF_READY_DEFER_MS}ms")
+            PLog.d(TAG, "AF not converged; gating shutter, deferring up to ${afReadyDeferMs()}ms")
             kickAfConvergenceForCapture()
             if (!deferCaptureUntilAfReady { capture(onAccepted) }) {
                 return
@@ -8207,8 +8340,8 @@ class Camera2Controller(private val context: Context) {
         val zeroCount = zeroEvFrameCount.coerceAtLeast(1)
         return buildList {
             add(0f)
-            add(HdrBracketConfig.YUV_LONG_EV)
-            add(HdrBracketConfig.YUV_SHORT_EV)
+            add(HdrBracketConfig.yuvLongEv())
+            add(HdrBracketConfig.yuvShortEv())
             repeat((zeroCount - 1).coerceAtLeast(0)) {
                 add(0f)
             }
@@ -8571,7 +8704,7 @@ class Camera2Controller(private val context: Context) {
             val longFrameIsoUpper = minOf(
                 isoRange.upper,
                 reportedMaxAnalogIso
-                    ?: MultiFrameConfig.LONG_FRAME_FALLBACK_MAX_ANALOG_SENSITIVITY,
+                    ?: MultiFrameConfig.longFrameFallbackMaxIso(),
             )
             if (longFrameIsoUpper < isoRange.lower) {
                 PLog.w(
@@ -8832,7 +8965,7 @@ class Camera2Controller(private val context: Context) {
                             "shortTargetEv=${currentState.hdrPlusShortFrameExposureEv} " +
                             "longTargetEv=${currentState.hdrPlusLongFrameExposureEv} " +
                             "longNominalMaxShutterNs=" +
-                            "${MultiFrameConfig.LONG_FRAME_MAX_EXPOSURE_TIME_NS} " +
+                            "${MultiFrameConfig.longFrameMaxExposureTimeNs()} " +
                             "total=${radianceRequests.size}",
                     )
                     radianceRequests

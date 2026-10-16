@@ -1,0 +1,37 @@
+{
+  "ops_file": "funshot",
+  "dry_run": false,
+  "ok": 4,
+  "skip": 0,
+  "fail": 0,
+  "results": [
+    {
+      "i": 0,
+      "op": "x_insert_after",
+      "file": "app/src/main/cpp/CMakeLists.txt",
+      "status": "OK",
+      "detail": "x_insert_after ×1 [exact] (delivery/patches/funshot_patch.md:72)"
+    },
+    {
+      "i": 1,
+      "op": "x_insert_before",
+      "file": "app/src/main/java/com/hinnka/mycamera/computational/BgJobRunner.kt",
+      "status": "OK",
+      "detail": "x_insert_before ×1 [exact] (delivery/patches/funshot_patch.md:96)"
+    },
+    {
+      "i": 2,
+      "op": "x_insert_after",
+      "file": "app/src/main/java/com/hinnka/mycamera/ui/camera/ComputationalSceneBar.kt",
+      "status": "OK",
+      "detail": "x_insert_after ×1 [exact] (delivery/patches/funshot_patch.md:168)"
+    },
+    {
+      "i": 3,
+      "op": "x_insert_after",
+      "file": "app/src/main/java/com/hinnka/mycamera/ui/camera/ComputationalSceneBar.kt",
+      "status": "OK",
+      "detail": "x_insert_after ×1 [exact] (delivery/patches/funshot_patch.md:199)"
+    }
+  ]
+}

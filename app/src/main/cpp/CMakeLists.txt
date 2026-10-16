@@ -486,7 +486,18 @@ add_library(my-native-lib SHARED
     jpeg_r_encoder.cpp
     yuv_utils.cpp
     lut_processor.cpp
+    funshot/funshot_panorama.cpp
+    funshot/funshot_panorama_jni.cpp
     dcp_parser.cpp
+    # C++/NDK 计算层（nativecompute）：MFSR 相位相关/叠加/IBP + 流式叠加 + CLAHE/双边/USM
+    nativecompute/accumulate_core.cpp
+    nativecompute/enhance_core.cpp
+    nativecompute/mfsr_core.cpp
+    # C++/NDK 计算层（longexposure）：暗帧减法+增量 MAX 融合 / 月亮局部色调映射
+    longexposure/light_painting_core.cpp
+    longexposure/longexposure_jni.cpp
+        focusstack/focusstack_core.cpp
+        focusstack/focusstack_jni.cpp
     mgc_denoise_static/mgc_denoise_static.cpp
     mgc_denoise_static/mgc_full_resolution_denoise_jni.cpp
     mgc_denoise_static/mgc_sabre_resolve_jni.cpp
@@ -588,6 +599,16 @@ set_source_files_properties(
     COMPILE_OPTIONS "-fno-fast-math;-ffp-contract=off"
 )
 
+# nativecompute mirrors the pure-Kotlin reference paths value-for-value: the Kotlin
+# side uses Math.round (floor(x + 0.5)) and a fixed float evaluation order, so these
+# sources must stay independent of the target-wide -ffast-math and keep FP contraction off.
+set_source_files_properties(
+    nativecompute/accumulate_core.cpp
+    nativecompute/enhance_core.cpp
+    nativecompute/mfsr_core.cpp
+    PROPERTIES
+    COMPILE_OPTIONS "-fno-fast-math;-ffp-contract=off"
+)
 # 启用优化和 OpenMP
 target_compile_definitions(
     my-native-lib

@@ -1,0 +1,170 @@
+{
+  "ops_file": "logvideo",
+  "dry_run": false,
+  "ok": 23,
+  "skip": 0,
+  "fail": 0,
+  "results": [
+    {
+      "i": 0,
+      "op": "x_replace_lit2",
+      "file": "app/src/main/java/com/hinnka/mycamera/color/TransferCurve.kt",
+      "status": "OK",
+      "detail": "x_replace_lit2 ×1 [exact] (delivery/patches/logvideo_patch.md:77)"
+    },
+    {
+      "i": 1,
+      "op": "x_insert_before",
+      "file": "app/src/main/java/com/hinnka/mycamera/raw/ColorSpace.kt",
+      "status": "OK",
+      "detail": "x_insert_before ×1 [exact] (delivery/patches/logvideo_patch.md:107)"
+    },
+    {
+      "i": 2,
+      "op": "x_replace_lit",
+      "file": "app/src/main/java/com/hinnka/mycamera/video/VideoTypes.kt",
+      "status": "OK",
+      "detail": "x_replace_lit ×1 [exact] (delivery/patches/logvideo_patch.md:130)"
+    },
+    {
+      "i": 3,
+      "op": "x_insert_before",
+      "file": "app/src/main/java/com/hinnka/mycamera/lut/PreviewColorShaderModules.kt",
+      "status": "OK",
+      "detail": "x_insert_before ×1 [exact] (delivery/patches/logvideo_patch.md:210)"
+    },
+    {
+      "i": 4,
+      "op": "x_insert_before",
+      "file": "app/src/main/java/com/hinnka/mycamera/lut/PreviewColorShaderModules.kt",
+      "status": "OK",
+      "detail": "x_insert_before ×1 [exact] (delivery/patches/logvideo_patch.md:233)"
+    },
+    {
+      "i": 5,
+      "op": "x_insert_after",
+      "file": "app/src/main/java/com/hinnka/mycamera/lut/LutShaderMappings.kt",
+      "status": "OK",
+      "detail": "x_insert_after ×1 [exact] (delivery/patches/logvideo_patch.md:258)"
+    },
+    {
+      "i": 6,
+      "op": "x_insert_after",
+      "file": "app/src/main/java/com/hinnka/mycamera/video/VideoEncoderColorConfig.kt",
+      "status": "OK",
+      "detail": "x_insert_after ×1 [exact] (delivery/patches/logvideo_patch.md:276)"
+    },
+    {
+      "i": 7,
+      "op": "x_replace",
+      "file": "app/src/main/java/com/hinnka/mycamera/camera/Camera2Controller.kt",
+      "status": "OK",
+      "detail": "x_replace ×1 [exact] (delivery/patches/logvideo_patch.md:301)"
+    },
+    {
+      "i": 8,
+      "op": "x_replace",
+      "file": "app/src/main/java/com/hinnka/mycamera/camera/Camera2Controller.kt",
+      "status": "OK",
+      "detail": "x_replace ×1 [exact] (delivery/patches/logvideo_patch.md:341)"
+    },
+    {
+      "i": 9,
+      "op": "x_insert_after",
+      "file": "app/src/main/java/com/hinnka/mycamera/camera/Camera2Controller.kt",
+      "status": "OK",
+      "detail": "x_insert_after ×1 [exact] (delivery/patches/logvideo_patch.md:360)"
+    },
+    {
+      "i": 10,
+      "op": "x_insert_after",
+      "file": "app/src/main/java/com/hinnka/mycamera/camera/Camera2Controller.kt",
+      "status": "OK",
+      "detail": "x_insert_after ×1 [exact] (delivery/patches/logvideo_patch.md:376)"
+    },
+    {
+      "i": 11,
+      "op": "x_insert_after",
+      "file": "app/src/main/java/com/hinnka/mycamera/ui/camera/CameraScreen.kt",
+      "status": "OK",
+      "detail": "x_insert_after ×1 [exact] (delivery/patches/logvideo_patch.md:399)"
+    },
+    {
+      "i": 12,
+      "op": "x_insert_after",
+      "file": "app/src/main/java/com/hinnka/mycamera/ui/camera/CameraGLSurfaceView.kt",
+      "status": "OK",
+      "detail": "x_insert_after ×1 [exact] (delivery/patches/logvideo_patch.md:432)"
+    },
+    {
+      "i": 13,
+      "op": "insert_after",
+      "file": "app/src/main/java/com/hinnka/mycamera/ui/camera/CameraGLSurfaceView.kt",
+      "status": "OK",
+      "detail": "insert_after ×1 [exact]"
+    },
+    {
+      "i": 14,
+      "op": "x_insert_after",
+      "file": "app/src/main/java/com/hinnka/mycamera/ui/camera/CameraPreviewGL.kt",
+      "status": "OK",
+      "detail": "x_insert_after ×1 [exact] (delivery/patches/logvideo_patch.md:451)"
+    },
+    {
+      "i": 15,
+      "op": "insert_after",
+      "file": "app/src/main/java/com/hinnka/mycamera/ui/camera/CameraPreviewGL.kt",
+      "status": "OK",
+      "detail": "insert_after ×1 [exact]"
+    },
+    {
+      "i": 16,
+      "op": "insert_after",
+      "file": "app/src/main/java/com/hinnka/mycamera/ui/camera/CameraPreviewGL.kt",
+      "status": "OK",
+      "detail": "insert_after ×1 [exact]"
+    },
+    {
+      "i": 17,
+      "op": "insert_after",
+      "file": "app/src/main/java/com/hinnka/mycamera/lut/LutRenderer.kt",
+      "status": "OK",
+      "detail": "insert_after ×1 [exact]"
+    },
+    {
+      "i": 18,
+      "op": "insert_after",
+      "file": "app/src/main/java/com/hinnka/mycamera/lut/LutRenderer.kt",
+      "status": "OK",
+      "detail": "insert_after ×1 [exact]"
+    },
+    {
+      "i": 19,
+      "op": "x_replace",
+      "file": "app/src/main/java/com/hinnka/mycamera/livephoto/LivePhotoRecorder.kt",
+      "status": "OK",
+      "detail": "x_replace ×1 [exact] (delivery/patches/logvideo_patch.md:495)"
+    },
+    {
+      "i": 20,
+      "op": "x_insert_after",
+      "file": "app/src/main/java/com/hinnka/mycamera/livephoto/LivePhotoRecorder.kt",
+      "status": "OK",
+      "detail": "x_insert_after ×1 [exact] (delivery/patches/logvideo_patch.md:529)"
+    },
+    {
+      "i": 21,
+      "op": "x_insert_after",
+      "file": "app/src/main/assets/luts/config.json",
+      "status": "OK",
+      "detail": "x_insert_after ×1 [exact] (delivery/patches/logvideo_patch.md:576)"
+    },
+    {
+      "i": 22,
+      "op": "x_replace_lit2",
+      "file": "app/src/main/assets/luts/downloadable_sources.json",
+      "status": "OK",
+      "detail": "x_replace_lit2 ×1 [exact] (delivery/patches/logvideo_patch.md:608)"
+    }
+  ]
+}

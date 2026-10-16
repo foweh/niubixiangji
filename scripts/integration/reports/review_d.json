@@ -1,0 +1,359 @@
+{
+  "ops_file": "review_d",
+  "dry_run": false,
+  "ok": 50,
+  "skip": 0,
+  "fail": 0,
+  "results": [
+    {
+      "i": 0,
+      "op": "replace",
+      "file": "app/src/main/java/com/hinnka/mycamera/computational/ServerEnhancementClient.kt",
+      "status": "OK",
+      "detail": "replace ×1 [exact]"
+    },
+    {
+      "i": 1,
+      "op": "replace",
+      "file": "app/src/main/java/com/hinnka/mycamera/computational/ServerEnhancementClient.kt",
+      "status": "OK",
+      "detail": "replace ×1 [exact]"
+    },
+    {
+      "i": 2,
+      "op": "replace",
+      "file": "app/src/main/java/com/hinnka/mycamera/computational/ServerEnhancementClient.kt",
+      "status": "OK",
+      "detail": "replace ×1 [exact]"
+    },
+    {
+      "i": 3,
+      "op": "replace",
+      "file": "app/src/main/java/com/hinnka/mycamera/computational/ServerEnhancementClient.kt",
+      "status": "OK",
+      "detail": "replace ×1 [exact]"
+    },
+    {
+      "i": 4,
+      "op": "replace",
+      "file": "app/src/main/java/com/hinnka/mycamera/computational/ServerEnhancementClient.kt",
+      "status": "OK",
+      "detail": "replace ×1 [exact]"
+    },
+    {
+      "i": 5,
+      "op": "replace",
+      "file": "app/src/main/java/com/hinnka/mycamera/computational/ServerEnhancementClient.kt",
+      "status": "OK",
+      "detail": "replace ×1 [exact]"
+    },
+    {
+      "i": 6,
+      "op": "replace",
+      "file": "app/src/main/java/com/hinnka/mycamera/computational/ServerEnhancementClient.kt",
+      "status": "OK",
+      "detail": "replace ×1 [exact]"
+    },
+    {
+      "i": 7,
+      "op": "replace",
+      "file": "app/src/main/java/com/hinnka/mycamera/computational/ServerEnhancementClient.kt",
+      "status": "OK",
+      "detail": "replace ×1 [exact]"
+    },
+    {
+      "i": 8,
+      "op": "replace",
+      "file": "app/src/main/java/com/hinnka/mycamera/computational/ServerEnhancementClient.kt",
+      "status": "OK",
+      "detail": "replace ×1 [exact]"
+    },
+    {
+      "i": 9,
+      "op": "append",
+      "file": "app/src/main/java/com/hinnka/mycamera/computational/ServerEnhancementClient.kt",
+      "status": "OK",
+      "detail": "append 223 bytes"
+    },
+    {
+      "i": 10,
+      "op": "insert_after",
+      "file": "app/src/main/java/com/hinnka/mycamera/stabilization/RealtimeStabilizationCoordinator.kt",
+      "status": "OK",
+      "detail": "insert_after ×1 [exact]"
+    },
+    {
+      "i": 11,
+      "op": "replace",
+      "file": "app/src/main/java/com/hinnka/mycamera/stabilization/RealtimeStabilizationCoordinator.kt",
+      "status": "OK",
+      "detail": "replace ×1 [exact]"
+    },
+    {
+      "i": 12,
+      "op": "replace",
+      "file": "app/src/main/java/com/hinnka/mycamera/stabilization/RealtimeStabilizationCoordinator.kt",
+      "status": "OK",
+      "detail": "replace ×1 [exact]"
+    },
+    {
+      "i": 13,
+      "op": "replace",
+      "file": "app/src/main/java/com/hinnka/mycamera/stabilization/RealtimeStabilizationCoordinator.kt",
+      "status": "OK",
+      "detail": "replace ×1 [exact]"
+    },
+    {
+      "i": 14,
+      "op": "replace",
+      "file": "app/src/main/java/com/hinnka/mycamera/stabilization/RealtimeStabilizationCoordinator.kt",
+      "status": "OK",
+      "detail": "replace ×1 [exact]"
+    },
+    {
+      "i": 15,
+      "op": "insert_after",
+      "file": "app/src/main/java/com/hinnka/mycamera/video/VideoCapabilitiesResolver.kt",
+      "status": "OK",
+      "detail": "insert_after ×1 [exact]"
+    },
+    {
+      "i": 16,
+      "op": "replace",
+      "file": "app/src/main/java/com/hinnka/mycamera/video/VideoCapabilitiesResolver.kt",
+      "status": "OK",
+      "detail": "replace ×1 [exact]"
+    },
+    {
+      "i": 17,
+      "op": "replace",
+      "file": "app/src/main/java/com/hinnka/mycamera/video/VideoCapabilitiesResolver.kt",
+      "status": "OK",
+      "detail": "replace ×1 [exact]"
+    },
+    {
+      "i": 18,
+      "op": "insert_after",
+      "file": "app/src/main/java/com/hinnka/mycamera/hdr/EstimatedSdrGainmapProducer.kt",
+      "status": "OK",
+      "detail": "insert_after ×1 [exact]"
+    },
+    {
+      "i": 19,
+      "op": "replace",
+      "file": "app/src/main/java/com/hinnka/mycamera/hdr/EstimatedSdrGainmapProducer.kt",
+      "status": "OK",
+      "detail": "replace ×1 [exact]"
+    },
+    {
+      "i": 20,
+      "op": "replace",
+      "file": "app/src/main/java/com/hinnka/mycamera/hdr/EstimatedSdrGainmapProducer.kt",
+      "status": "OK",
+      "detail": "replace ×1 [exact]"
+    },
+    {
+      "i": 21,
+      "op": "insert_after",
+      "file": "app/src/main/java/com/hinnka/mycamera/hdr/RawGainmapMath.kt",
+      "status": "OK",
+      "detail": "insert_after ×1 [exact]"
+    },
+    {
+      "i": 22,
+      "op": "replace",
+      "file": "app/src/main/java/com/hinnka/mycamera/hdr/GpuReferenceGainmapProducer.kt",
+      "status": "OK",
+      "detail": "replace ×1 [exact]"
+    },
+    {
+      "i": 23,
+      "op": "replace",
+      "file": "app/src/main/java/com/hinnka/mycamera/video/VideoRecorder.kt",
+      "status": "OK",
+      "detail": "replace ×1 [exact]"
+    },
+    {
+      "i": 24,
+      "op": "append",
+      "file": "app/src/main/java/com/hinnka/mycamera/video/VideoRecorder.kt",
+      "status": "OK",
+      "detail": "append 240 bytes"
+    },
+    {
+      "i": 25,
+      "op": "replace",
+      "file": "app/src/main/java/com/hinnka/mycamera/lut/VideoExporter.kt",
+      "status": "OK",
+      "detail": "replace ×1 [exact]"
+    },
+    {
+      "i": 26,
+      "op": "insert_after",
+      "file": "app/src/main/java/com/hinnka/mycamera/processor/GlesMgcRawSpatialStacker.kt",
+      "status": "OK",
+      "detail": "insert_after ×1 [exact]"
+    },
+    {
+      "i": 27,
+      "op": "replace",
+      "file": "app/src/main/java/com/hinnka/mycamera/processor/GlesMgcRawSpatialStacker.kt",
+      "status": "OK",
+      "detail": "replace ×1 [exact]"
+    },
+    {
+      "i": 28,
+      "op": "replace",
+      "file": "app/src/main/java/com/hinnka/mycamera/processor/GlesMgcRawSpatialStacker.kt",
+      "status": "OK",
+      "detail": "replace ×3 [exact]"
+    },
+    {
+      "i": 29,
+      "op": "replace",
+      "file": "app/src/main/java/com/hinnka/mycamera/processor/GlesMgcRawSpatialStacker.kt",
+      "status": "OK",
+      "detail": "replace ×1 [exact]"
+    },
+    {
+      "i": 30,
+      "op": "replace",
+      "file": "app/src/main/java/com/hinnka/mycamera/processor/GlesMgcRawSpatialStacker.kt",
+      "status": "OK",
+      "detail": "replace ×1 [exact]"
+    },
+    {
+      "i": 31,
+      "op": "replace",
+      "file": "app/src/main/java/com/hinnka/mycamera/processor/GlesMgcRawSpatialStacker.kt",
+      "status": "OK",
+      "detail": "replace ×1 [exact]"
+    },
+    {
+      "i": 32,
+      "op": "insert_before",
+      "file": "app/src/main/java/com/hinnka/mycamera/processor/GlesMgcRawSpatialStacker.kt",
+      "status": "OK",
+      "detail": "insert_before ×1 [exact]"
+    },
+    {
+      "i": 33,
+      "op": "replace",
+      "file": "app/src/main/java/com/hinnka/mycamera/processor/GlesMgcRawSpatialStacker.kt",
+      "status": "OK",
+      "detail": "replace ×1 [line-trim]"
+    },
+    {
+      "i": 34,
+      "op": "replace",
+      "file": "app/src/main/java/com/hinnka/mycamera/computational/LinearDngMerger.kt",
+      "status": "OK",
+      "detail": "replace ×1 [exact]"
+    },
+    {
+      "i": 35,
+      "op": "replace",
+      "file": "app/src/main/java/com/hinnka/mycamera/computational/LinearDngMerger.kt",
+      "status": "OK",
+      "detail": "replace ×1 [exact]"
+    },
+    {
+      "i": 36,
+      "op": "replace",
+      "file": "app/src/main/java/com/hinnka/mycamera/computational/LinearDngMerger.kt",
+      "status": "OK",
+      "detail": "replace ×1 [exact]"
+    },
+    {
+      "i": 37,
+      "op": "replace",
+      "file": "app/src/main/java/com/hinnka/mycamera/computational/LinearDngMerger.kt",
+      "status": "OK",
+      "detail": "replace ×1 [exact]"
+    },
+    {
+      "i": 38,
+      "op": "replace",
+      "file": "app/src/main/java/com/hinnka/mycamera/computational/LinearDngMerger.kt",
+      "status": "OK",
+      "detail": "replace ×1 [exact]"
+    },
+    {
+      "i": 39,
+      "op": "replace",
+      "file": "app/src/main/java/com/hinnka/mycamera/computational/LinearDngMerger.kt",
+      "status": "OK",
+      "detail": "replace ×1 [exact]"
+    },
+    {
+      "i": 40,
+      "op": "replace",
+      "file": "app/src/main/java/com/hinnka/mycamera/computational/LinearDngMerger.kt",
+      "status": "OK",
+      "detail": "replace ×1 [exact]"
+    },
+    {
+      "i": 41,
+      "op": "replace",
+      "file": "app/src/main/java/com/hinnka/mycamera/processor/MultiFrameStacker.kt",
+      "status": "OK",
+      "detail": "replace ×1 [exact]"
+    },
+    {
+      "i": 42,
+      "op": "replace",
+      "file": "app/src/main/java/com/hinnka/mycamera/ui/camera/CameraScreen.kt",
+      "status": "OK",
+      "detail": "replace ×1 [exact]"
+    },
+    {
+      "i": 43,
+      "op": "replace",
+      "file": "app/src/main/java/com/hinnka/mycamera/ui/camera/CameraScreen.kt",
+      "status": "OK",
+      "detail": "replace ×1 [exact]"
+    },
+    {
+      "i": 44,
+      "op": "replace",
+      "file": "app/src/main/java/com/hinnka/mycamera/ui/camera/CameraScreen.kt",
+      "status": "OK",
+      "detail": "replace ×1 [exact]"
+    },
+    {
+      "i": 45,
+      "op": "replace",
+      "file": "app/src/main/java/com/hinnka/mycamera/ui/camera/CameraScreen.kt",
+      "status": "OK",
+      "detail": "replace ×1 [exact]"
+    },
+    {
+      "i": 46,
+      "op": "replace",
+      "file": "app/src/main/java/com/hinnka/mycamera/ui/camera/CameraScreen.kt",
+      "status": "OK",
+      "detail": "replace ×1 [exact]"
+    },
+    {
+      "i": 47,
+      "op": "replace",
+      "file": "app/src/main/java/com/hinnka/mycamera/ui/camera/CameraScreen.kt",
+      "status": "OK",
+      "detail": "replace ×1 [exact]"
+    },
+    {
+      "i": 48,
+      "op": "replace",
+      "file": "app/src/main/java/com/hinnka/mycamera/ui/camera/CameraScreen.kt",
+      "status": "OK",
+      "detail": "replace ×1 [exact]"
+    },
+    {
+      "i": 49,
+      "op": "append",
+      "file": "app/src/main/java/com/hinnka/mycamera/ui/camera/CameraScreen.kt",
+      "status": "OK",
+      "detail": "append 711 bytes"
+    }
+  ]
+}

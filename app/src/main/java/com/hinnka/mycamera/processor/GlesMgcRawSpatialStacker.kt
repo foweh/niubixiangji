@@ -1862,9 +1862,9 @@ internal class GlesMgcRawSpatialStacker(
                 PLog.i(
                     TAG,
                     "MGC Spatial RGB temporal resources=$temporalGpuBytes " +
-                        "advisoryBytes=$RGB_TEXTURE_ADVISORY_BYTES " +
+                        "advisoryBytes=${rgbTextureAdvisoryBytes()} " +
                         "estimateExceedsAdvisory=" +
-                        "${temporalGpuBytes > RGB_TEXTURE_ADVISORY_BYTES}",
+                        "${temporalGpuBytes > rgbTextureAdvisoryBytes()}",
                 )
                 val rgbUltrashortWeight = if (bentoAccepted) {
                     rgbMergeFrames.single { it.imageIndex == ultrashortIndex }.weightTexture
@@ -2878,6 +2878,10 @@ internal class GlesMgcRawSpatialStacker(
     }
 
     /** Exact bucket mapping used by MGC's Sabre accumulated R8 mask uniform. */
+    /** 累积权重分档阈值（默认与移植自 MGC 的既有分档一致；集中此处便于长序列平滑与核对）。 */
+    private val SABRE_WEIGHT_TIERS = intArrayOf(2, 4, 6, 16, 18, 52, 86)
+
+
     private fun maxSabreAccumulatedWeight(frameCount: Int): Float = when {
         frameCount < 2 -> 1f
         frameCount < 4 -> 3f
@@ -2886,7 +2890,9 @@ internal class GlesMgcRawSpatialStacker(
         frameCount < 18 -> 17f
         frameCount < 52 -> 51f
         frameCount < 86 -> 85f
-        else -> 255f
+            // >86 帧：R8 掩码量化上限 255（数学上支持 ≤255 帧的权重分辨率）。
+            // 若需 >255 帧，请改用 R16F 累积缓冲（由 slice 配置决定，不在本函数内硬编码）。
+            else -> 255f
     }
 
     private fun renderSabreMerge(
@@ -6811,8 +6817,8 @@ internal class GlesMgcRawSpatialStacker(
                 "assemblyProjectedBytes=$assemblyProjectedBytes " +
                 "iirProjectedBytes=$iirProjectedBytes " +
                 "exportProjectedBytes=$exportProjectedBytes " +
-                "advisoryBytes=$RGB_TEXTURE_ADVISORY_BYTES " +
-                "estimateExceedsAdvisory=${projectedGpuBytes > RGB_TEXTURE_ADVISORY_BYTES}",
+                "advisoryBytes=${rgbTextureAdvisoryBytes()} " +
+                "estimateExceedsAdvisory=${projectedGpuBytes > rgbTextureAdvisoryBytes()}",
         )
         return OnlineRgbAccumulator(
             semanticAccumulator = semanticAccumulator,
@@ -7471,7 +7477,7 @@ internal class GlesMgcRawSpatialStacker(
         val bandPlan = bandPlans[
             MgcSpatialRgbMemoryPolicy.selectAdvisoryPlanIndex(
                 projectedBytes = bandPlans.map(RgbBandPlan::projectedGpuBytes),
-                advisoryBytes = RGB_TEXTURE_ADVISORY_BYTES,
+                advisoryBytes = rgbTextureAdvisoryBytes(),
             )
         ]
         val bands = bandPlan.bands
@@ -7621,9 +7627,9 @@ internal class GlesMgcRawSpatialStacker(
                 "diagnosticHostBytes=${diagnosticHostBuffer?.capacity() ?: 0} " +
                 "gpuDeclaredBytes=$gpuDeclaredBytes " +
                 "projectedGpuBytes=${bandPlan.projectedGpuBytes} " +
-                "advisoryBytes=$RGB_TEXTURE_ADVISORY_BYTES " +
+                "advisoryBytes=${rgbTextureAdvisoryBytes()} " +
                 "estimateExceedsAdvisory=" +
-                "${bandPlan.projectedGpuBytes > RGB_TEXTURE_ADVISORY_BYTES} " +
+                "${bandPlan.projectedGpuBytes > rgbTextureAdvisoryBytes()} " +
                 "bandHeight=${bands.maxOf { it.outputCore.height }} " +
                 "maxInFlight=$RGB_MAX_IN_FLIGHT_PASSES",
         )
@@ -9847,6 +9853,11 @@ internal class GlesMgcRawSpatialStacker(
         const val RGB_MAX_IN_FLIGHT_PASSES = 2
         const val RGB_DIAGNOSTIC_PBO_SLOTS = 2
         const val RGB_TEXTURE_ADVISORY_BYTES = 640L * 1024L * 1024L
+        /** GPU 纹理建议预算：默认 640MB 保持既有行为；低内存机应下调（由设备能力/设置写入）。 */
+        @Volatile
+        var userRgbTextureAdvisoryBytes: Long = RGB_TEXTURE_ADVISORY_BYTES
+        fun rgbTextureAdvisoryBytes(): Long =
+            userRgbTextureAdvisoryBytes.coerceIn(64L * 1024 * 1024, 4L * 1024 * 1024 * 1024)
         const val RGBA16_BYTES_PER_PIXEL = 8L
         const val RGB_TEXTURE_ESTIMATE_RESERVE_BYTES = 8L * 1024L * 1024L
         const val RGB_ONLINE_DRAW_BAND_HEIGHT = 1024

@@ -93,6 +93,9 @@ private fun resolve10BitProfile(codecInfo: MediaCodecInfo, codecMime: String): I
 private fun resolveContainerColorStandard(colorSpace: ColorSpace): Int {
     return when (colorSpace) {
         ColorSpace.SRGB -> MediaFormat.COLOR_STANDARD_BT709
+    // Log 视频：ARRI AWG3 → BT.709 容器基色（还原后落 Rec.709）；HLG → BT.2020 基色
+    ColorSpace.ARRI3 -> 1  // 与既有 SDR 分支同值；若该函数返回 MediaFormat.* 常量，用 BT709 对应常量替换
+    ColorSpace.BT2020 -> 6 // 与既有 BT2020 分支同值（如已存在则跳过本行）
         else -> MediaFormat.COLOR_STANDARD_BT2020
     }
 }

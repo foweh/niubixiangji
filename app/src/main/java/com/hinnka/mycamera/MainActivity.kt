@@ -38,6 +38,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import com.hinnka.mycamera.appgallery.AppGalleryPreviewContract
+import com.hinnka.mycamera.appgallery.AppGalleryShareKit
+import com.hinnka.mycamera.ui.appgallery.AppGalleryScreen
+import com.hinnka.mycamera.ui.appgallery.AppGalleryViewModel
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -87,8 +91,9 @@ import com.hinnka.mycamera.ui.settings.FilterManagementScreen
 import com.hinnka.mycamera.ui.settings.FrameEditorScreen
 import com.hinnka.mycamera.ui.settings.FrameManagementScreen
 import com.hinnka.mycamera.ui.settings.PhantomPipCropScreen
-import com.hinnka.mycamera.ui.settings.SettingsScreen
-import com.hinnka.mycamera.ui.settings.PresetEditorScreen
+import com.hinnka.mycamera.superres.SuperResModelManagerScreen
+import com.hinnka.mycamera.superres.SuperResRuntime
+import com.hinnka.mycamera.ui.uisettings.ProSettingsScreenimport com.hinnka.mycamera.ui.settings.PresetEditorScreen
 import com.hinnka.mycamera.ui.settings.PresetManagementScreen
 import com.hinnka.mycamera.ui.theme.PhotonCameraTheme
 import com.hinnka.mycamera.update.AppUpdateManager
@@ -109,10 +114,30 @@ import java.util.Locale
 object Routes {
     const val CAMERA = "camera"
     const val GALLERY = "gallery"
+    /** 应用内置独立相册（管理核心域；预览跳转走预览域约定路由）。 */
+    const val APP_GALLERY = "app_gallery"
     const val PHOTO_DETAIL = "photo_detail/{tab}/{index}?photoId={photoId}"
     const val BURST_DETAIL = "burst_detail/{photoId}"
     const val PHOTO_EDIT = "photo_edit"
-    const val SETTINGS = "settings"
+
+    const val APPGALLERY_PREVIEW =
+        "appgallery_preview?mediaUri={mediaUri}&mediaType={mediaType}&mediaId={mediaId}&index={index}&total={total}&source={source}"
+
+    fun appGalleryPreview(
+        mediaUri: String,
+        mediaType: String? = null,
+        mediaId: String? = null,
+        index: Int = 0,
+        total: Int = 1,
+        source: String? = null,
+    ): String = buildString {
+        append("appgallery_preview?mediaUri=").append(Uri.encode(mediaUri))
+        mediaType?.let { append("&mediaType=").append(Uri.encode(it)) }
+        mediaId?.let { append("&mediaId=").append(Uri.encode(it)) }
+        append("&index=").append(index)
+        append("&total=").append(total)
+        source?.let { append("&source=").append(Uri.encode(it)) }
+    }    const val SETTINGS = "settings"
     const val FILTER_MANAGEMENT = "filter_management?locateLutId={locateLutId}&videoLut={videoLut}"
     const val FRAME_MANAGEMENT = "frame_management"
     const val FRAME_EDITOR = "frame_editor?frameId={frameId}&imageFrame={imageFrame}"
@@ -127,7 +152,9 @@ object Routes {
         return if (presetId != null) "preset_editor?presetId=$presetId" else "preset_editor"
     }
     const val PHANTOM_PIP_CROP = "phantom_pip_crop"
-    const val COLOR_WALK = "color_walk"
+    const val SUPER_RES_MODELS = "super_res_models"
+    /** uisettings：统一专业设置页（独立新入口，不在既有 SettingsScreen 内）。 */
+    const val PRO_SETTINGS = "pro_settings"    const val COLOR_WALK = "color_walk"
     const val FILM_LIBRARY = "film_library"
     const val FILM_DETAIL = "film_detail/{filmId}"
 
@@ -686,9 +713,13 @@ fun NavigationHost(
                                     galleryViewModel.setCurrentPhotoById(pendingId)
                                     navController.navigate(Routes.photoDetail(photoId = pendingId))
                                 } else {
+                                    val latest = galleryViewModel.selectedTab
                                     navController.navigate(Routes.GALLERY)
-                                }
-                            },
+                                    // 可选：直达预览体验域（相册 40 项之 34–42）
+                                    // navController.navigate(
+                                    //     Routes.appGalleryPreview(mediaUri = latestUri, index = 0, total = count)
+                                    // )
+                                }                            },
                             onSettingsClick = {
                                 navController.navigate(Routes.SETTINGS)
                             },
@@ -781,6 +812,63 @@ fun NavigationHost(
                 }
             }
 
+            composable(Routes.APP_GALLERY) {
+                val appGalleryViewModel: AppGalleryViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
+                val appGalleryItems by appGalleryViewModel.items.collectAsState()
+                AppGalleryScreen(
+                    viewModel = appGalleryViewModel,
+                    onBack = { navController.popBackStack() },
+                    onOpenPreview = { launch ->
+                        // 与预览体验域的字符串级契约：只传键值，不引用其类
+                        // （见 appgallery/AppGalleryPreviewContract.kt 的 PREVIEW_KEY_*）
+                        val extras = AppGalleryPreviewContract.toPreviewEntryExtras(launch, appGalleryItems)
+                        if (extras.isNotEmpty()) {
+                            // 方式 A（当前可用）：预览域已注册路由 AppGalleryPreviewEntryContract.ROUTE，
+                            // 键名逐字一致；值需 URL 编码（其列表分隔符 U+001F 会被编码为 %1F，导航解码还原）
+                            val query = extras.entries.joinToString("&") {
+                                "${it.key}=${Uri.encode(it.value)}"
+                            }
+                            navController.navigate("${AppGalleryPreviewContract.PREVIEW_ROUTE}?$query")
+                            // 方式 B：预览域改用 Bundle/Intent 入口时，直接 extras.forEach { putExtra(k, v) }
+                            //（键名相同，无需编码，推荐在其提供 Activity 时切换）
+                        }
+                    },
+                    onOpenMap = { latitude, longitude, label ->
+                        AppGalleryShareKit.buildGeoChooser(latitude, longitude, label)?.let {
+                            context.startActivity(it)
+                        }
+                    }
+                )
+            }
+            composable(
+                route = Routes.APPGALLERY_PREVIEW,
+                arguments = listOf(
+                    navArgument("mediaUri") { type = NavType.StringType },
+                    navArgument("mediaType") { type = NavType.StringType; nullable = true; defaultValue = null },
+                    navArgument("mediaId") { type = NavType.StringType; nullable = true; defaultValue = null },
+                    navArgument("index") { type = NavType.IntType; defaultValue = 0 },
+                    navArgument("total") { type = NavType.IntType; defaultValue = 1 },
+                    navArgument("source") { type = NavType.StringType; nullable = true; defaultValue = null },
+                ),
+            ) { entry ->
+                val args = entry.arguments
+                val request = AppGalleryPreviewRequest(
+                    mediaUri = args?.getString("mediaUri").orEmpty(),
+                    mediaType = args?.getString("mediaType"),
+                    mediaId = args?.getString("mediaId"),
+                    index = args?.getInt("index") ?: 0,
+                    total = args?.getInt("total") ?: 1,
+                    source = args?.getString("source"),
+                ).normalized()
+                AppGalleryPreviewScreen(
+                    request = request,
+                    // mediaSource / actionHost / bookmarkSource：由管理域宿主按
+                    // AppGalleryPreviewMediaSource / AppGalleryPreviewActionHost /
+                    // AppGalleryPreviewBookmarkSource 三个接口注入；此处给出可运行的最小实现。
+                    mediaSource = AppGalleryPreviewMediaSource.single(request),
+                    onClose = { navController.popBackStack() },
+                )
+            }
             composable(Routes.GALLERY) {
                 GalleryScreen(
                     viewModel = galleryViewModel,
@@ -877,6 +965,9 @@ fun NavigationHost(
                     onFilterManagementClick = {
                         navController.navigate(Routes.filterManagement())
                     },
+                    onSuperResSettingsClick = {
+                        navController.navigate(Routes.SUPER_RES_MODELS)
+                    },
                     onVideoFilterManagementClick = {
                         navController.navigate(Routes.filterManagement(videoLut = true))
                     },
@@ -888,7 +979,18 @@ fun NavigationHost(
                     },
                     onPresetManagementClick = {
                         navController.navigate(Routes.PRESET_MANAGEMENT)
+                    },
+                    onProSettingsClick = {
+                        navController.navigate(Routes.PRO_SETTINGS)
                     }
+                )
+            }
+            composable(Routes.PRO_SETTINGS) {
+                // uisettings：未接线时用内存端口兜底（页面可完整操作，只是不落盘）。
+                // 接好端口后把 InMemoryProSettingsPort() 换成真实实现即可（见下节「PORT 接线」）。
+                ProSettingsScreen(
+                    onBack = { navController.popBackStack() },
+                    onNavigate = { target -> /* 例：nativecompute.diagnostics → 打开诊断页 */ },
                 )
             }
 
@@ -964,6 +1066,14 @@ fun NavigationHost(
                 )
             }
 
+            composable(Routes.SUPER_RES_MODELS) {
+                val superResContext = LocalContext.current
+                val superResRuntime = remember { SuperResRuntime(superResContext) }
+                SuperResModelManagerScreen(
+                    runtime = superResRuntime,
+                    onBack = { navController.popBackStack() }
+                )
+            }
             composable(Routes.LUT_CREATOR) {
                 val lutCreatorViewModel: LutCreatorViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
                 LutCreatorScreen(

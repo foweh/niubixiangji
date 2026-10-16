@@ -317,6 +317,11 @@ internal object PreviewColorShaderModules {
             if (curveType == 9) {
                 return mix(15.1927 * l + 0.151927, 0.224282 * log10(155.975327 * l + 2.55975327), step(-0.01, l));
             }
+            if (curveType == 11) {
+                // ARRI LogC3（EI 800）：线性段 e*x+f 与对数段 c*log10(a*x+b)+d，分界 0.010591
+                vec3 logPart = 0.247190 * log10(max(5.555556 * l + 0.052272, vec3(1e-6))) + 0.385537;
+                return clamp(mix(5.367655 * l + 0.092809, logPart, step(0.010591, l)), 0.0, 1.0);
+            }
             if (curveType == 10) {
                 return mix(8.0 * l + 0.09, 0.27 * log10(max(1.3 * l + 0.0115, vec3(1e-6))) + 0.6, step(0.006, l));
             }
@@ -354,6 +359,10 @@ internal object PreviewColorShaderModules {
             }
             if (colorSpace == 7) {
                 return mat3(0.585196, 0.078589, 0.022794, 0.322642, 0.819627, 0.114217, 0.092162, 0.101784, 0.862989) * rgb;
+            }
+            if (colorSpace == 12) {
+                // Rec.709 → ARRI Wide Gamut 3（D65，无白点适配），列主序，与 Kotlin LogGamutMatrix 数值一致
+                return mat3(0.631321, 0.036820, 0.017370, 0.270801, 0.793037, 0.148789, 0.097878, 0.170143, 0.833841) * rgb;
             }
             if (colorSpace == 9) {
                 return mat3(0.541973, 0.076993, 0.058875, 0.360148, 0.767969, 0.273495, 0.097891, 0.155019, 0.667533) * rgb;

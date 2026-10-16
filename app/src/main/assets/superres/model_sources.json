@@ -1,0 +1,80 @@
+{
+  "_comment": "端侧 AI 超分 / 风格迁移 / 图像修复的可拆卸模型目录（仿 assets/luts/downloadable_sources.json 模式）。APK 只打包本文件（元信息），权重一律按需下载或由用户导入，绝不内置进 APK。下载完成后由 SuperResModelDownloadManager 做大小/可选 sha256 校验，再原子改名落到 filesDir/<downloadDir>/。",
+  "_source_config": {
+    "_comment": "remoteCatalogUrl 非空时，App 运行时拉取该地址的 JSON 覆盖本目录（便于不发版增补模型源/换成自建镜像）；留空则只用本内置目录。downloadDir 为应用私有目录下的子目录名，用户可整体删除。",
+    "remoteCatalogUrl": "",
+    "downloadDir": "superres_models"
+  },
+  "models": [
+    {
+      "id": "sr_realesrgan_x2",
+      "kind": "SUPER_RESOLUTION",
+      "name": { "en": "Real-ESRGAN x2 (general)", "zh": "Real-ESRGAN x2 通用超分" },
+      "scale": 2,
+      "fileName": "realesrgan_x2.onnx",
+      "approxSizeMB": 18,
+      "sourceUrl": "https://github.com/xinntao/Real-ESRGAN",
+      "license": "BSD-3-Clause",
+      "star": "37101（2026-10-16 GitHub API 核实）",
+      "note": "默认档：RRDBNet 轻量变体的 ONNX 导出，2 倍放大 + 去噪 + 去压缩伪影。fileUrl 留空 = 请从官方 Releases 下载官方权重后自行导出 ONNX 并用「导入模型」放入，或由集成方填入自建镜像直链。",
+      "fileUrl": "",
+      "sha256": ""
+    },
+    {
+      "id": "sr_realesrgan_x4",
+      "kind": "SUPER_RESOLUTION",
+      "name": { "en": "Real-ESRGAN x4 (general)", "zh": "Real-ESRGAN x4 通用超分" },
+      "scale": 4,
+      "fileName": "realesrgan_x4.onnx",
+      "approxSizeMB": 34,
+      "sourceUrl": "https://github.com/xinntao/Real-ESRGAN",
+      "license": "BSD-3-Clause",
+      "star": "37101（2026-10-16 GitHub API 核实）",
+      "note": "可选档：4 倍放大，耗时/内存约为 x2 的 4 倍，建议 QUALITY 档使用。",
+      "fileUrl": "",
+      "sha256": ""
+    },
+    {
+      "id": "style_candy",
+      "kind": "STYLE_TRANSFER",
+      "name": { "en": "Style: Candy", "zh": "风格：糖果" },
+      "scale": 1,
+      "fileName": "style_candy.onnx",
+      "approxSizeMB": 8,
+      "sourceUrl": "https://github.com/jcjohnson/fast-neural-style",
+      "license": "不明确（仓库无 LICENSE 文件，只参考其移动端化思路，不采代码）",
+      "star": "4362（2026-10-16 GitHub API 核实）",
+      "note": "前馈风格网思路：每风格一个网络、推理即一次前向。ONNX 由用户自行导出后用「导入模型」放入；fileUrl 必须留空以避免分发许可不明的权重。",
+      "fileUrl": "",
+      "sha256": ""
+    },
+    {
+      "id": "style_mosaic",
+      "kind": "STYLE_TRANSFER",
+      "name": { "en": "Style: Mosaic", "zh": "风格：马赛克" },
+      "scale": 1,
+      "fileName": "style_mosaic.onnx",
+      "approxSizeMB": 8,
+      "sourceUrl": "https://github.com/jcjohnson/fast-neural-style",
+      "license": "不明确（仓库无 LICENSE 文件，只参考其移动端化思路，不采代码）",
+      "star": "4362（2026-10-16 GitHub API 核实）",
+      "note": "同上的第二个风格档位。",
+      "fileUrl": "",
+      "sha256": ""
+    },
+    {
+      "id": "inpaint_lama",
+      "kind": "INPAINTING",
+      "name": { "en": "LaMa Inpainting", "zh": "LaMa 图像修复" },
+      "scale": 1,
+      "fileName": "lama_inpaint.onnx",
+      "approxSizeMB": 200,
+      "sourceUrl": "https://github.com/advimman/lama",
+      "license": "Apache-2.0（代码）；预训练权重许可另计，需用户自备",
+      "star": "10315（2026-10-16 GitHub API 核实）",
+      "note": "掩膜 + 单次前向补全思路。权重体积大且许可不随代码，故不内置、不给直链，只能「导入模型」。",
+      "fileUrl": "",
+      "sha256": ""
+    }
+  ]
+}

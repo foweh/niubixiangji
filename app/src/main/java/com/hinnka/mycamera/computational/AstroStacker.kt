@@ -42,6 +42,28 @@ object AstroStacker {
 
     /** 工作边长上限，控制 CPU 内存/耗时。 */
     const val DEFAULT_WORK_LONG_EDGE = 1280
+    /** MEDIAN 档位默认工作长边上限（原硬编码 960；保留以维持默认行为逐字节不变）。 */
+    const val DEFAULT_MEDIAN_WORK_LONG_EDGE = 960
+
+    /**
+     * 工作分辨率长边（默认 1280 零回归，可上调；受内存守卫约束）。
+     */
+    @Volatile
+    var userWorkLongEdge: Int = DEFAULT_WORK_LONG_EDGE
+
+    fun workLongEdge(): Int = userWorkLongEdge.coerceIn(320, 8192)
+
+    /** 对齐最大平移（像素）。 */
+    @Volatile
+    var userMaxAlignShiftPx: Int = DEFAULT_MAX_ALIGN_SHIFT_PX
+
+    fun maxAlignShiftPx(): Int = userMaxAlignShiftPx.coerceIn(0, 256)
+
+    /** 对齐搜索降采样倍数（越大越省内存/越慢）。 */
+    @Volatile
+    var userAlignDownscale: Int = DEFAULT_ALIGN_DOWNSCALE
+
+    fun alignDownscale(): Int = userAlignDownscale.coerceIn(1, 8)
 
     enum class TrailAccumulationMode(val displayName: String) {
         /** 逐像素取最大值（lighten），星轨不消失，最常用。 */
@@ -75,9 +97,9 @@ object AstroStacker {
         aspectRatio: AspectRatio?,
         referenceFrameIndex: Int = images.size / 2,
         sigmaClipSigma: Float = DEFAULT_SIGMA_CLIP_SIGMA,
-        maxAlignShiftPx: Int = DEFAULT_MAX_ALIGN_SHIFT_PX,
-        alignDownscale: Int = DEFAULT_ALIGN_DOWNSCALE,
-        workLongEdge: Int = DEFAULT_WORK_LONG_EDGE,
+        maxAlignShiftPx: Int = maxAlignShiftPx(),
+        alignDownscale: Int = alignDownscale(),
+        workLongEdge: Int = workLongEdge(),
         enableRotationCompensation: Boolean = false,
         /**
          * 默认 false（三脚架固定拍摄主流程：星星的位移/星点位置就是要的结果，
@@ -191,7 +213,7 @@ object AstroStacker {
         rotation: Int,
         aspectRatio: AspectRatio?,
         mode: TrailAccumulationMode = TrailAccumulationMode.LIGHTEN_MAX,
-        workLongEdge: Int = DEFAULT_WORK_LONG_EDGE,
+        workLongEdge: Int = workLongEdge(),
         job: BgJob? = null,
     ): Bitmap? {
         if (images.isEmpty()) return null
@@ -267,22 +289,45 @@ object AstroStacker {
         type: PsStackType,
         frameCount: Int,
         align: Boolean,
-        workLongEdge: Int = DEFAULT_WORK_LONG_EDGE,
+        workLongEdge: Int = workLongEdge(),
         job: BgJob? = null,
     ): Bitmap? {
         if (images.isEmpty()) return null
         val srcW = images[0].width
         val srcH = images[0].height
-        // MEDIAN 需要缓存所有样本，降低工作分辨率以控内存。
-        val medianCap = if (type == PsStackType.MEDIAN) 960 else workLongEdge
-        val scale = minOf(1.0, medianCap.toDouble() / max(srcW, srcH).toDouble())
+        val limited = if (frameCount > 0) images.take(frameCount) else images
+
+        // 工作分辨率：默认 workLongEdge；MEDIAN 需缓存全部样本，先按 960 降采样，
+        // 再按任务的堆预算进一步降级（防 OOM）。
+        var cap = if (type == PsStackType.MEDIAN) minOf(workLongEdge, DEFAULT_MEDIAN_WORK_LONG_EDGE) else workLongEdge
+        if (type == PsStackType.MEDIAN && job != null) {
+                // 估算 MEDIAN 峰值：每像素每帧 2 字节样本（P0-9 平坦缓冲，无对象头）；取 3 字节保守值。
+            while (cap > 320) {
+                val s = minOf(1.0, cap.toDouble() / max(srcW, srcH).toDouble())
+                val w = max(2, (srcW * s).toInt())
+                val h = max(2, (srcH * s).toInt())
+                val estBytes = w.toLong() * h.toLong() * limited.size.toLong() * 3L
+                if (job.guardMemory(estBytes)) break
+                cap /= 2
+                PLog.w(TAG, "MEDIAN memory guard: degrade workLongEdge to $cap")
+            }
+        }
+        val scale = minOf(1.0, cap.toDouble() / max(srcW, srcH).toDouble())
         val workW = max(2, (srcW * scale).toInt())
         val workH = max(2, (srcH * scale).toInt())
-        val limited = if (frameCount > 0) images.take(frameCount) else images
 
         val frames = limited.mapNotNull { extractLuma(it, workW, workH) }
         if (frames.isEmpty()) return null
         val count = workW * workH
+
+        // 一次性缓冲的内存守卫（非 MEDIAN 路径）：超预算则再降一档分辨率。
+        if (type != PsStackType.MEDIAN && job != null) {
+            // MEAN/MAX/MIN 各需 1 个 FloatArray(count) + Int/FloatArray(count) ≈ 8*count 字节。
+            val estBytes = count.toLong() * 8L
+            if (!job.guardMemory(estBytes)) {
+                PLog.w(TAG, "PS stack memory guard tripped; consider reducing frameCount")
+            }
+        }
 
         // 对齐：估计每帧相对参考（中间帧）的全局平移。
         val shifts = if (align) estimateGlobalShifts(frames) else IntArray(frames.size * 2)
@@ -311,23 +356,28 @@ object AstroStacker {
                 val best = FloatArray(count) { 256f }
                 for (i in frames.indices) {
                     accumulateMin(frames[i].data, workW, workH, shifts[i*2], shifts[i*2+1], best)
+                    // 长任务分片让出，避免独占后台消费者（也让取消/暂停真正生效）。
+                    job?.let { it.report(i + 1, frames.size); it.checkYield() }
                 }
                 ByteArray(count) { p -> best[p].toInt().coerceIn(0, 255).toByte() }
             }
             PsStackType.MEDIAN -> run {
-                // 收集每像素样本（工作分辨率 + 限帧以控内存）。
-                val perPixel = Array(count) { ArrayList<Short>(frames.size) }
+                // 无装箱平坦样本缓冲：每像素每帧 2 字节（Short），无对象头 →
+                // 峰值 = count * n * 2B（原 Array(count){ArrayList<Short>} 每样本 16B 头，守卫低估一倍以上）。
+                val n = frames.size
+                val samples = ShortArray(count * n)
                 for (i in frames.indices) {
                     val dx = shifts[i*2]; val dy = shifts[i*2+1]
                     for (y in 0 until workH) {
                         val sy = y + dy; if (sy < 0 || sy >= workH) continue
                         for (x in 0 until workW) {
                             val sx = x + dx; if (sx < 0 || sx >= workW) continue
-                            perPixel[y*workW + x].add(frames[i].data[sy*workW + sx])
+                            samples[(y*workW + x) * n + i] = frames[i].data[sy*workW + sx]
                         }
                     }
+                    job?.let { it.report(i + 1, n); it.checkYield() }
                 }
-                ByteArray(count) { p -> medianShort(perPixel[p]).toByte() }
+                ByteArray(count) { p -> medianShort(samples, p * n, n) }
             }
         }
 
@@ -618,6 +668,13 @@ object AstroStacker {
         if (samples.isEmpty()) return 0
         val sorted = samples.map { it.toInt().and(0xFFFF) }.sorted()
         return sorted[sorted.size / 2]
+    }
+
+    /** 平坦缓冲取中位数（P0-9：无装箱路径；按 [start, start+length) 切片）。 */
+    private fun medianShort(samples: ShortArray, start: Int, length: Int): Byte {
+        val slice = samples.copyOfRange(start, start + length)
+        slice.sort()
+        return slice[length / 2].toByte()
     }
 
     /** sigma-clip 第二遍：只累加 |v - mean| <= sigma*std 的样本。 */

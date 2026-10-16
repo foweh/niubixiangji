@@ -1,0 +1,30 @@
+{
+  "ops_file": "multiframesr",
+  "dry_run": false,
+  "ok": 3,
+  "skip": 0,
+  "fail": 0,
+  "results": [
+    {
+      "i": 0,
+      "op": "x_insert_before",
+      "file": "app/src/main/java/com/hinnka/mycamera/computational/BgJobRunner.kt",
+      "status": "OK",
+      "detail": "x_insert_before ×1 [exact] (delivery/patches/multiframesr_patch.md:57)"
+    },
+    {
+      "i": 1,
+      "op": "insert_after",
+      "file": "app/src/main/java/com/hinnka/mycamera/ui/camera/ComputationalSceneBar.kt",
+      "status": "OK",
+      "detail": "insert_after ×1 [exact]"
+    },
+    {
+      "i": 2,
+      "op": "x_insert_after",
+      "file": "app/src/main/java/com/hinnka/mycamera/ui/camera/ComputationalSceneBar.kt",
+      "status": "OK",
+      "detail": "x_insert_after ×1 [exact] (delivery/patches/multiframesr_patch.md:147)"
+    }
+  ]
+}

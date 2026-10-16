@@ -40,7 +40,7 @@ internal object MultiFrameExposurePlanner {
         val maximumLongExposureTimeNs = min(
             exposureTimeUpperNs,
             max(
-                MultiFrameConfig.LONG_FRAME_MAX_EXPOSURE_TIME_NS,
+                MultiFrameConfig.longFrameMaxExposureTimeNs(),
                 baseExposureTimeNs,
             ),
         )

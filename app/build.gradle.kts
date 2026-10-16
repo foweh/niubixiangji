@@ -43,17 +43,26 @@ android {
             }
         }
 
+        // AI 平台层内置端点（默认值；用户可在「设置 → AI 服务 → AI 平台」覆盖，落 DataStore）
         buildConfigField(
             "String",
             "BUILT_IN_API_URL",
-            "https://camera-api.hinnka.me/v1".toBuildConfigString()
+            localProperties.getProperty("BUILT_IN_API_URL", "https://camera-api.hinnka.me/v1")
+                .toBuildConfigString()
         )
+        // 内置密钥：默认空。**禁止**把真实密钥写进本文件或任何入库文件；
+        // 需要预置时写在 local.properties（不进版本库）：BUILT_IN_API_KEY_GOOGLE=xxx
         buildConfigField(
             "String",
             "BUILT_IN_API_KEY",
             localProperties.getProperty("BUILT_IN_API_KEY_GOOGLE", "").toBuildConfigString()
         )
-    }
+        // 可选：LUT 下载目录的远端覆盖地址（对应 assets/luts/downloadable_sources.json 的 remoteCatalogUrl）
+        buildConfigField(
+            "String",
+            "LUT_CATALOG_URL",
+            localProperties.getProperty("LUT_CATALOG_URL", "").toBuildConfigString()
+        )    }
 
     signingConfigs {
         getByName("debug") {
@@ -253,4 +262,8 @@ dependencies {
     implementation("org.tensorflow:tensorflow-lite-gpu:2.17.0")
     implementation("org.tensorflow:tensorflow-lite-gpu-api:2.17.0")
     implementation("org.tensorflow:tensorflow-lite-support:0.5.0")
+    // ONNX Runtime Mobile：端侧 AI 超分/风格迁移/修复的推理运行时
+    // （microsoft/onnxruntime，22083★，MIT；2026-10-16 GitHub API 核实）
+    // 最新稳定版 1.31.0（Maven Central 元数据核实，lastUpdated 2026-10-09）
+    implementation("com.microsoft.onnxruntime:onnxruntime-android:1.31.0")
 }

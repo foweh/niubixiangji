@@ -9,6 +9,11 @@ import com.hinnka.mycamera.raw.RawMetadata
 import com.hinnka.mycamera.video.CaptureMode
 import com.hinnka.mycamera.video.VideoCapabilities
 import com.hinnka.mycamera.video.VideoConfig
+import com.hinnka.mycamera.videomodes.DualCameraPipDecision
+import com.hinnka.mycamera.videomodes.FpsCapability
+import com.hinnka.mycamera.videomodes.HdrVideoDecision
+import com.hinnka.mycamera.videomodes.ManualVideoProbe
+import com.hinnka.mycamera.videomodes.VideoModesConfig
 import com.hinnka.mycamera.video.VideoRecordingState
 import kotlin.math.abs
 
@@ -411,6 +416,13 @@ data class CameraState(
     val captureMode: CaptureMode = CaptureMode.PHOTO,
     val photoPreviewStabilizationEnabled: Boolean = false,
     val videoConfig: VideoConfig = VideoConfig(),
+    // videomodes：视频模式扩展（16 项开放参数 + 一次性探测结果）。
+    // 依赖方向：camera → videomodes（单向）；videomodes 不 import camera 任何符号，无循环依赖。
+    val videoModes: VideoModesConfig = VideoModesConfig(),
+    val videoModesFpsCapability: FpsCapability? = null,
+    val videoManualProbe: ManualVideoProbe = ManualVideoProbe(),
+    val hdrVideoDecision: HdrVideoDecision? = null,
+    val pipDecision: DualCameraPipDecision? = null,
     val videoCapabilities: VideoCapabilities = VideoCapabilities(),
     val videoRecordingState: VideoRecordingState = VideoRecordingState(),
 ) {
@@ -422,8 +434,9 @@ data class CameraState(
 
     companion object {
         const val MAX_PHOTO_PREVIEW_SHUTTER_SPEED_NS = 1_000_000_000L / 15
-        const val MAX_VIDEO_MANUAL_SHUTTER_SPEED_NS = 1_000_000_000L / 6
-    }
+        // videomodes §7：视频档手动快门上限不再写死，交给 ManualVideoParamPolicy 按 open 值 clamp。
+        // 默认仍为 1/6s（保持既有行为），上限与用户可调范围见 ManualVideoParamPolicy。
+        const val MAX_VIDEO_MANUAL_SHUTTER_SPEED_NS = 1_000_000_000L / 6    }
 
     /**
      * 是否全自动曝光

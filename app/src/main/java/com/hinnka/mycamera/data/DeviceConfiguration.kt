@@ -220,7 +220,11 @@ internal object DeviceConfigurationFields {
     private val fields = listOf(
         stringField("preferred_main_camera_id"),
         Field("hdr_plus_frame_count", Storage.INT, {
-            integer(it, MultiFrameConfig.MIN_HDR_PLUS_FRAME_COUNT, MultiFrameConfig.MAX_FRAME_COUNT)
+            integer(
+                it,
+                MultiFrameConfig.MIN_HDR_PLUS_FRAME_COUNT,
+                MultiFrameConfig.ABSOLUTE_FRAME_COUNT_MAX,
+            )
         }),
         stringField("preferred_macro_camera_id"),
         listField("custom_lens_ids"),

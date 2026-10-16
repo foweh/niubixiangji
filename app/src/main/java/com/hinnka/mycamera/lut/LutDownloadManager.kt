@@ -6,6 +6,8 @@ import com.hinnka.mycamera.color.TransferCurve
 import com.hinnka.mycamera.data.CustomImportManager
 import com.hinnka.mycamera.raw.ColorSpace
 import com.hinnka.mycamera.utils.PLog
+import com.hinnka.mycamera.BuildConfig
+import com.hinnka.mycamera.aiplatform.AiParamStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
@@ -35,7 +37,8 @@ class LutDownloadManager(private val context: Context) {
         private const val CATALOG_ASSET = "luts/downloadable_sources.json"
         private const val DOWNLOAD_SUBDIR = "downloaded_luts"
         private const val CATEGORY_DOWNLOADED = "Downloaded"
-    }
+        /** 用户可在运行时覆盖的远端目录地址（设置页 / 后续统一设置页写入）。 */
+        const val KEY_REMOTE_CATALOG = "lut.remoteCatalogUrl"    }
 
     private val customImportManager = CustomImportManager(context)
 
@@ -100,8 +103,9 @@ class LutDownloadManager(private val context: Context) {
         }
         val dir = File(context.filesDir, DOWNLOAD_SUBDIR).apply { mkdirs() }
         val outFile = File(dir, guessFileName(pack))
-        val ok = runCatching { httpDownload(URL(pack.fileUrl), outFile) }.getOrDefault(false)
-        if (!ok || outFile.length() <= 0L) {
+        val partFile = File(dir, outFile.name + ".part")
+        val ok = runCatching { httpDownload(URL(pack.fileUrl), partFile) }.getOrDefault(false)
+        if (ok && partFile.length() > 0L) partFile.renameTo(outFile) else partFile.delete()        if (!ok || outFile.length() <= 0L) {
             outFile.delete()
             PLog.w(TAG, "Download failed for ${pack.id}")
             return@withContext null
@@ -129,11 +133,22 @@ class LutDownloadManager(private val context: Context) {
 
     // ---- 内部工具 ----
 
-    private fun readRemoteCatalogUrl(): String? = runCatching {
-        val obj = JSONObject(context.assets.open(CATALOG_ASSET).bufferedReader().use { it.readText() })
-        obj.optJSONObject("_source_config")?.optString("remoteCatalogUrl").orEmpty().ifBlank { null }
-    }.getOrNull()
-
+    /**
+     * 远端目录地址（I14 修复）：优先级 = 用户运行时配置（DataStore）> BuildConfig 注入 > assets 内置。
+     * 任何一级为空就往下走，全空则只用内置 assets 目录。
+     */
+    private suspend fun readRemoteCatalogUrl(): String? {
+        val fromUser = runCatching {
+            AiParamStore.readString(context, KEY_REMOTE_CATALOG, "")
+        }.getOrNull().orEmpty()
+        if (fromUser.isNotBlank()) return fromUser
+        val fromBuild = runCatching { BuildConfig.LUT_CATALOG_URL }.getOrNull().orEmpty()
+        if (fromBuild.isNotBlank()) return fromBuild
+        return runCatching {
+            val obj = JSONObject(context.assets.open(CATALOG_ASSET).bufferedReader().use { it.readText() })
+            obj.optJSONObject("_source_config")?.optString("remoteCatalogUrl").orEmpty().ifBlank { null }
+        }.getOrNull()
+    }
     private fun guessFileName(pack: DownloadablePack): String {
         val ext = when (pack.format) {
             "cube_bundle", "haldclut" -> "cube"
@@ -151,8 +166,19 @@ class LutDownloadManager(private val context: Context) {
                 readTimeout = 30_000
                 instanceFollowRedirects = true
             }
-            if (conn.responseCode != HttpURLConnection.HTTP_OK) return false
-            conn.inputStream.use { input ->
+            if (conn.responseCode != HttpURLConnection.HTTP_OK) {
+                PLog.w(TAG, "LUT download HTTP ${conn.responseCode} for $url")
+                return false
+            }
+            val contentType = conn.contentType.orEmpty()
+            if (contentType.isNotBlank() &&
+                !contentType.startsWith("application/") &&
+                !contentType.startsWith("text/") &&
+                !contentType.startsWith("binary/")
+            ) {
+                PLog.w(TAG, "Unexpected content-type for LUT: $contentType")
+                return false
+            }            conn.inputStream.use { input ->
                 dest.outputStream().use { output -> input.copyTo(output) }
             }
             true
@@ -171,8 +197,11 @@ class LutDownloadManager(private val context: Context) {
                 readTimeout = 10_000
                 instanceFollowRedirects = true
             }
-            conn.inputStream.bufferedReader().use { it.readText() }
-        } finally {
+            if (conn.responseCode != HttpURLConnection.HTTP_OK) {
+                PLog.w(TAG, "Catalog fetch HTTP ${conn.responseCode}")
+                return ""
+            }
+            conn.inputStream.bufferedReader().use { it.readText() }        } finally {
             conn?.disconnect()
         }
     }
