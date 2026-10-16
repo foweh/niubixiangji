@@ -45,3 +45,9 @@ interface GalleryMediaDao {
     @Query("DELETE FROM gallery_media WHERE id = :id")
     suspend fun deleteById(id: String)
 }
+
+/** phash 去重使用的轻量投影行（仅主键与感知哈希十六进制串）。 */
+data class PhashRow(
+    val id: String,
+    val phashHex: String
+)
