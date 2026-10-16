@@ -85,18 +85,18 @@ object AppGalleryBgTasks {
             type = taskType,
             priority = priority,
             onFinish = null,
-        ) { job ->
+        ) {
             var generated = 0
             var failed = 0
             var degraded = 0
             val thumbDir = AppGalleryStorageLayout.thumbnailCacheDir(appContext)
             var edge = safeConfig.thumbnailMaxEdgePx
-            for (index in targets.indices step job.batchSizeFor(targets.size)) {
-                val end = minOf(index + job.batchSizeFor(targets.size), targets.size)
+            for (index in targets.indices step batchSizeFor(targets.size)) {
+                val end = minOf(index + batchSizeFor(targets.size), targets.size)
                 for (i in index until end) {
                     val item = targets[i]
                     // 每次解码工作缓冲 = edge²×4 字节；超预算则逐级降边长（不失败）
-                    while (edge > MIN_THUMBNAIL_EDGE && !job.guardMemory(edge.toLong() * edge * 4L)) {
+                    while (edge > MIN_THUMBNAIL_EDGE && !guardMemory(edge.toLong() * edge * 4L)) {
                         edge /= 2
                         degraded++
                     }
@@ -105,8 +105,8 @@ object AppGalleryBgTasks {
                     }.onFailure { PLog.w(TAG, "thumbnail failed: ${item.id}", it) }.getOrDefault(false)
                     if (ok) generated++ else failed++
                 }
-                job.checkYield()
-                job.report(end, targets.size)
+                checkYield()
+                report(end, targets.size)
             }
             onFinish?.invoke(AppGalleryThumbnailResult(generated, failed, degraded))
         }
@@ -130,7 +130,7 @@ object AppGalleryBgTasks {
         quality: Int,
     ): Boolean {
         val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-        decodeToOptions(context, item.uri, bounds, null)
+        decodeToOptions(context, item.uri, bounds)
         val longest = maxOf(bounds.outWidth, bounds.outHeight)
         var sample = 1
         if (longest > 0) {
@@ -140,7 +140,7 @@ object AppGalleryBgTasks {
             inSampleSize = sample
             inPreferredConfig = Bitmap.Config.ARGB_8888
         }
-        val bitmap = decodeToOptions(context, item.uri, options, null) ?: return false
+        val bitmap = decodeToOptions(context, item.uri, options) ?: return false
         val scaled = runCatching {
             val scale = edge.toFloat() / maxOf(bitmap.width, bitmap.height).coerceAtLeast(1)
             if (scale >= 1f) {
@@ -242,17 +242,17 @@ object AppGalleryBgTasks {
             chunkSize = safeConfig.duplicateScanBatch,
             type = taskType,
             priority = priority,
-        ) { job ->
+        ) {
             val entries = ArrayList<AppGalleryHashEntry>(candidates.size)
             var skipped = 0
             var edge = safeConfig.duplicateResizeEdge
             val images = ArrayList<AppGalleryGrayImage>(4)
-            for (index in candidates.indices step job.batchSizeFor(candidates.size)) {
-                val end = minOf(index + job.batchSizeFor(candidates.size), candidates.size)
+            for (index in candidates.indices step batchSizeFor(candidates.size)) {
+                val end = minOf(index + batchSizeFor(candidates.size), candidates.size)
                 images.clear()
                 for (i in index until end) {
                     val item = candidates[i]
-                    while (edge > 16 && !job.guardMemory(edge.toLong() * edge * 4L)) edge /= 2
+                    while (edge > 16 && !guardMemory(edge.toLong() * edge * 4L)) edge /= 2
                     val gray = runCatching { decodeGray(appContext, item.uri, edge) }.getOrNull()
                     if (gray == null) {
                         skipped++
@@ -281,8 +281,8 @@ object AppGalleryBgTasks {
                         skipped++
                     }
                 }
-                job.checkYield()
-                job.report(end, candidates.size)
+                checkYield()
+                report(end, candidates.size)
             }
             val groups = AppGalleryDuplicateDetector.group(
                 entries = entries,
@@ -329,15 +329,15 @@ object AppGalleryBgTasks {
             chunkSize = safeConfig.batchOperationBatchSize,
             type = taskType,
             priority = BgJobPriority.LOW,
-        ) { job ->
+        ) {
             if (!safeConfig.trashAutoPurge) {
-                job.checkYield()
+                checkYield()
                 onFinish?.invoke(0)
                 return@submit
             }
             val lastRun = settings.lastTrashPurgeAt()
             if (!AppGalleryTrashRules.shouldRunPurge(lastRun, now, safeConfig.trashPurgeCheckIntervalHours)) {
-                job.checkYield()
+                checkYield()
                 onFinish?.invoke(0)
                 return@submit
             }
@@ -345,13 +345,13 @@ object AppGalleryBgTasks {
             val plan = AppGalleryTrashRules.buildCleanupPlan(entries, now, safeConfig)
             if (plan.isNoop) {
                 settings.setLastTrashPurgeAt(now)
-                job.checkYield()
+                checkYield()
                 onFinish?.invoke(0)
                 return@submit
             }
             val done = ArrayList<String>(plan.expired.size)
-            for (index in plan.expired.indices step job.batchSizeFor(plan.expired.size)) {
-                val end = minOf(index + job.batchSizeFor(plan.expired.size), plan.expired.size)
+            for (index in plan.expired.indices step batchSizeFor(plan.expired.size)) {
+                val end = minOf(index + batchSizeFor(plan.expired.size), plan.expired.size)
                 for (i in index until end) {
                     val entry = plan.expired[i]
                     val target = File(entry.trashUri)
@@ -359,8 +359,8 @@ object AppGalleryBgTasks {
                         done.add(entry.itemId)
                     }
                 }
-                job.checkYield()
-                job.report(end, plan.expired.size)
+                checkYield()
+                report(end, plan.expired.size)
             }
             settings.saveTrash(settings.loadTrash().filterNot { done.contains(it.itemId) })
             settings.updateAnnotations { AppGalleryAnnotationMachine.drop(it, done) }
@@ -384,17 +384,17 @@ object AppGalleryBgTasks {
             chunkSize = safeConfig.batchOperationBatchSize,
             type = taskType,
             priority = BgJobPriority.LOW,
-        ) { job ->
+        ) {
             // 分片累加（不整表驻留中间结果）：按桶逐步合并
-            val chunkSize = job.batchSizeFor(items.size)
+            val chunkSize = batchSizeFor(items.size)
             var report = AppGalleryStats.compute(emptyList(), granularity, safeConfig)
             for (index in items.indices step chunkSize) {
                 val end = minOf(index + chunkSize, items.size)
                 val slice = items.subList(index, end)
                 val sliceReport = AppGalleryStats.compute(slice, granularity, safeConfig)
                 report = mergeReports(report, sliceReport, granularity)
-                job.checkYield()
-                job.report(end, items.size)
+                checkYield()
+                this.report(end, items.size)
             }
             onFinish?.invoke(report)
         }
@@ -468,10 +468,10 @@ object AppGalleryBgTasks {
             chunkSize = safeConfig.batchOperationBatchSize,
             type = taskType,
             priority = BgJobPriority.LOW,
-        ) { job ->
+        ) {
             val dir = AppGalleryStorageLayout.backupDir(appContext)
             if (plan.isEmpty) {
-                job.checkYield()
+                checkYield()
                 onFinish?.invoke(AppGalleryBackupResult(null, 0, 0L, 0))
                 return@submit
             }
@@ -494,9 +494,9 @@ object AppGalleryBgTasks {
                             failed++
                         }
                         pending++
-                        if (pending >= job.batchSizeFor(plan.entries.size)) {
-                            job.checkYield()
-                            job.report(written + failed, plan.entries.size)
+                        if (pending >= batchSizeFor(plan.entries.size)) {
+                            checkYield()
+                            report(written + failed, plan.entries.size)
                             pending = 0
                         }
                     }
@@ -516,15 +516,15 @@ object AppGalleryBgTasks {
                         failed++
                     }
                     pending++
-                    if (pending >= job.batchSizeFor(plan.entries.size)) {
-                        job.checkYield()
-                        job.report(written + failed, plan.entries.size)
+                    if (pending >= batchSizeFor(plan.entries.size)) {
+                        checkYield()
+                        report(written + failed, plan.entries.size)
                         pending = 0
                     }
                 }
                 outputPath = targetDir.absolutePath
             }
-            job.checkYield()
+            checkYield()
             onFinish?.invoke(AppGalleryBackupResult(outputPath, written, bytes, failed))
         }
     }
@@ -610,17 +610,17 @@ object AppGalleryBgTasks {
             chunkSize = safeConfig.batchOperationBatchSize,
             type = taskType,
             priority = BgJobPriority.NORMAL,
-        ) { job ->
+        ) {
             var moved = 0
             val targets = plan.targets
-            for (index in targets.indices step job.batchSizeFor(targets.size)) {
-                val end = minOf(index + job.batchSizeFor(targets.size), targets.size)
+            for (index in targets.indices step batchSizeFor(targets.size)) {
+                val end = minOf(index + batchSizeFor(targets.size), targets.size)
                 for (i in index until end) {
                     val result = trashStore.moveToTrash(targets[i], safeConfig)
                     if (result.success) moved++
                 }
-                job.checkYield()
-                job.report(end, targets.size)
+                checkYield()
+                report(end, targets.size)
             }
             onFinish?.invoke(moved)
         }

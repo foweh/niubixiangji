@@ -40,6 +40,7 @@ import com.hinnka.mycamera.livephoto.LivePhotoRecorder
 import com.hinnka.mycamera.lut.LutConfig
 import com.hinnka.mycamera.lut.VideoColorEffectLayer
 import com.hinnka.mycamera.logvideo.LogVideoConfigStore
+import com.hinnka.mycamera.computational.AstroStacker
 import com.hinnka.mycamera.logvideo.LogVideoLayerFactory
 import com.hinnka.mycamera.logvideo.LogVideoLutDecision
 import com.hinnka.mycamera.model.SafeImage
@@ -7158,15 +7159,6 @@ class Camera2Controller(private val context: Context) {
     }
 
     fun setVideoLogProfile(logProfile: VideoLogProfile) {
-        // 档位切换 → 同步本模块的曲线/还原 LUT 选择（按档位推荐曲线，用户手动改动优先）
-        LogVideoConfigStore.update { current ->
-            current.copy(
-                enabled = appliedProfile.isEnabled,
-                curve = current.curve.copy(
-                    preset = LogVideoLutDecision.recommendedPreset(appliedProfile) ?: current.curve.preset,
-                ),
-            )
-        }
         val previousProfile = _state.value.videoConfig.logProfile
         val resolvedProfile = if (_state.value.captureMode == CaptureMode.VIDEO) {
             logProfile
@@ -7176,6 +7168,15 @@ class Camera2Controller(private val context: Context) {
         _state.value = _state.value.copy(videoConfig = _state.value.videoConfig.copy(logProfile = resolvedProfile))
         refreshVideoCapabilities()
         val appliedProfile = _state.value.videoConfig.logProfile
+        // 档位切换 → 同步本模块的曲线/还原 LUT 选择（按档位推荐曲线，用户手动改动优先）
+        LogVideoConfigStore.update { current ->
+            current.copy(
+                enabled = appliedProfile.isEnabled,
+                curve = current.curve.copy(
+                    preset = LogVideoLutDecision.recommendedPreset(appliedProfile) ?: current.curve.preset,
+                ),
+            )
+        }
         if (previousProfile != appliedProfile || logProfile != appliedProfile) {
             PLog.d(
                 TAG,
@@ -7716,7 +7717,8 @@ class Camera2Controller(private val context: Context) {
             lutCurve = creativeLutConfig?.curve,
             lutColorSpace = creativeLutConfig?.colorSpace,
             lutAvailable = creativeLutConfig != null,
-        )        PLog.d(
+        )
+        PLog.d(
             TAG,
             "Video color output: log=${logProfile.name}, mode=${_state.value.videoConfig.logLutMode}, " +
                 "monitorLut=${creativeLutConfig?.title}, recordingLut=${recordingLut?.title}"

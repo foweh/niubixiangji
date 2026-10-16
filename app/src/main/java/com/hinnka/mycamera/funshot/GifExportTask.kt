@@ -89,26 +89,26 @@ object FunshotGifTask {
             type = BgTaskType.GIF_EXPORT,
             priority = priority,
             onFinish = { onFinish?.invoke() },
-        ) { job ->
-            val bridge = GifJobBridge(job)
-            job.report(0f, "准备帧序列")
+        ) {
+            val bridge = GifJobBridge(this)
+            report(0f, "准备帧序列")
             val argbFrames = ArrayList<FunArgbFrame>(snapshot.size)
             var converted = 0
             for (bitmap in snapshot) {
                 if (bitmap.isRecycled) continue
                 argbFrames += FunshotBitmaps.toArgbFrame(bitmap)
                 converted++
-                if (converted % job.batchSizeFor(snapshot.size.coerceAtLeast(1)) == 0) {
-                    job.report(converted.toFloat() / snapshot.size, "转换 $converted/${snapshot.size}")
-                    job.checkYield()
-                    if (!job.guardMemory(FunGifPipeline.estimateBytes(bitmap.width, bitmap.height, argbFrames.size))) {
+                if (converted % batchSizeFor(snapshot.size.coerceAtLeast(1)) == 0) {
+                    report(converted.toFloat() / snapshot.size, "转换 $converted/${snapshot.size}")
+                    checkYield()
+                    if (!guardMemory(FunGifPipeline.estimateBytes(bitmap.width, bitmap.height, argbFrames.size))) {
                         PLog.w(TAG, "memory guard rejects full frame list, pipeline will degrade")
                     }
                 }
             }
-            job.report(0.5f, "编码 GIF")
+            report(0.5f, "编码 GIF")
             val result = FunGifPipeline.encode(argbFrames, effective, bridge, bridge)
-            job.report(1f, "完成 ${result.width}x${result.height} / ${result.frameCount} 帧")
+            report(1f, "完成 ${result.width}x${result.height} / ${result.frameCount} 帧")
             if (result.isEmpty) {
                 PLog.w(TAG, "gif encode produced empty result: ${result.notes}")
                 onResult?.invoke(null)
@@ -134,11 +134,11 @@ object FunshotGifTask {
             type = BgTaskType.GIF_EXPORT,
             priority = priority,
             onFinish = { onFinish?.invoke() },
-        ) { job ->
-            val bridge = GifJobBridge(job)
+        ) {
+            val bridge = GifJobBridge(this)
             val retriever = MediaMetadataRetriever()
             try {
-                job.report(0f, "读取视频")
+                report(0f, "读取视频")
                 retriever.setDataSource(context, source.uri)
                 val width = retriever
                     .extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH)?.toIntOrNull()
@@ -175,7 +175,7 @@ object FunshotGifTask {
                         delays += request.delayCentis
                     }
                     grabbed++
-                    if (!job.guardMemory(
+                    if (!guardMemory(
                             FunGifPipeline.estimateBytes(request.outWidth, request.outHeight, argbFrames.size),
                         ) &&
                         argbFrames.isNotEmpty()
@@ -183,17 +183,17 @@ object FunshotGifTask {
                         PLog.w(TAG, "memory guard stops sampling at ${argbFrames.size} frames")
                         break
                     }
-                    job.report(grabbed.toFloat() / plan.size * 0.5f, "抽帧 $grabbed/${plan.size}")
-                    job.checkYield()
+                    report(grabbed.toFloat() / plan.size * 0.5f, "抽帧 $grabbed/${plan.size}")
+                    checkYield()
                 }
                 if (argbFrames.isEmpty()) {
                     PLog.w(TAG, "no frames grabbed from video")
                     onResult?.invoke(null)
                     return@submit
                 }
-                job.report(0.5f, "编码 GIF")
+                report(0.5f, "编码 GIF")
                 val result = FunGifPipeline.encode(argbFrames, effective, bridge, bridge, delays)
-                job.report(1f, "完成 ${result.width}x${result.height} / ${result.frameCount} 帧")
+                report(1f, "完成 ${result.width}x${result.height} / ${result.frameCount} 帧")
                 onResult?.invoke(if (result.isEmpty) null else result)
             } catch (error: Throwable) {
                 PLog.w(TAG, "video to gif failed: ${error.message}", error)

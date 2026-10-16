@@ -105,7 +105,8 @@ class LutDownloadManager(private val context: Context) {
         val outFile = File(dir, guessFileName(pack))
         val partFile = File(dir, outFile.name + ".part")
         val ok = runCatching { httpDownload(URL(pack.fileUrl), partFile) }.getOrDefault(false)
-        if (ok && partFile.length() > 0L) partFile.renameTo(outFile) else partFile.delete()        if (!ok || outFile.length() <= 0L) {
+        if (ok && partFile.length() > 0L) partFile.renameTo(outFile) else partFile.delete()
+        if (!ok || outFile.length() <= 0L) {
             outFile.delete()
             PLog.w(TAG, "Download failed for ${pack.id}")
             return@withContext null
@@ -178,7 +179,8 @@ class LutDownloadManager(private val context: Context) {
             ) {
                 PLog.w(TAG, "Unexpected content-type for LUT: $contentType")
                 return false
-            }            conn.inputStream.use { input ->
+            }
+            conn.inputStream.use { input ->
                 dest.outputStream().use { output -> input.copyTo(output) }
             }
             true

@@ -79,7 +79,7 @@ object AiFallback {
         onNotice: (AiFailureReason, Boolean) -> Unit = { _, _ -> },
         client: AiHttpClient? = null,
     ): T? {
-        val effective = client ?: AiPlatform.peek()
+        val effective = client ?: AiPlatform.httpClientOrNull()
         return if (effective != null) {
             with(effective) { executeWithFallback(capability, remote, localFallback, onNotice) }
         } else {

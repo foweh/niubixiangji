@@ -46,7 +46,7 @@ data class VideoEncoderColorConfig(
 }
 
 fun resolveVideoEncoderColorConfig(
-    codecInfo: MediaCodecInfo,
+    codecInfo: MediaCodecInfo?,
     codecMime: String,
     request: VideoEncoderColorRequest
 ): VideoEncoderColorConfig {
@@ -76,8 +76,8 @@ fun resolveVideoEncoderColorConfig(
     )
 }
 
-private fun resolve10BitProfile(codecInfo: MediaCodecInfo, codecMime: String): Int? {
-    val capabilities = runCatching { codecInfo.getCapabilitiesForType(codecMime) }.getOrNull() ?: return null
+private fun resolve10BitProfile(codecInfo: MediaCodecInfo?, codecMime: String): Int? {
+    val capabilities = runCatching { codecInfo?.getCapabilitiesForType(codecMime) }.getOrNull() ?: return null
     val supportedProfiles = capabilities.profileLevels.map { it.profile }.toSet()
     return when (codecMime) {
         MediaFormat.MIMETYPE_VIDEO_HEVC -> {

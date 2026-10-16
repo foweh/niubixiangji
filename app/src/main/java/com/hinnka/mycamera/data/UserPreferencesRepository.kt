@@ -75,6 +75,7 @@ import com.hinnka.mycamera.processor.DenoiseStrength
 import com.hinnka.mycamera.processor.PhotonSensorSizeTuning
 import com.hinnka.mycamera.processor.MgcRawMaxMode
 import com.hinnka.mycamera.raw.RawOutputUpscaleMode
+import com.hinnka.mycamera.viewmodel.MultipleExposureLimits
 import org.json.JSONObject
 import org.json.JSONArray
 

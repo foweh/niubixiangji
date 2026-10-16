@@ -60,7 +60,7 @@ class SoundShutterTrigger(
                 PLog.w(TAG, "RECORD_AUDIO not granted, sound trigger not started")
                 return false
             }
-            val requested = configProvider().coerced()
+            val requested = configProvider().coerceWithReport().value
             if (!requested.enabled) {
                 PLog.i(TAG, "sound trigger disabled by config")
                 return false
@@ -122,7 +122,7 @@ class SoundShutterTrigger(
 
     /** 配置变化时调用：未在录制中则立即换用新阈值/时长。 */
     fun refreshConfig() {
-        val requested = configProvider().coerced()
+        val requested = configProvider().coerceWithReport().value
         activeConfig = requested
         if (!gateRef.isRecording) {
             gateRef = SoundTriggerGate(requested)
@@ -170,7 +170,7 @@ class SoundShutterTrigger(
     private fun dispatch(decision: SoundTriggerDecision?) {
         if (decision == null || !decision.fired) return
         val action = decision.action ?: return
-        PLog.i(TAG, "sound trigger fired: action=$action level=${decision.levelDbfs} reason=${decision.reason}")
+        PLog.i(TAG, "sound trigger fired: action=$action level=${decision.level} reason=${decision.reason}")
         runCatching { onAction(action) }
             .onFailure { PLog.w(TAG, "sound trigger action failed: ${it.message}", it) }
     }

@@ -89,7 +89,7 @@ class AstroNavLocationProvider(
                 _state.value = manual!!
             } else if (configProvider().clamped().config.allowManualFallback) {
                 PLog.i(TAG, "location timeout, awaiting manual fallback")
-                _state.value = AstroNavLocation.failed("定位超时（${configProvider().config.locationTimeoutMs / 1000}s），请手动输入位置")
+                _state.value = AstroNavLocation.failed("定位超时（${configProvider().clamped().config.locationTimeoutMs / 1000}s），请手动输入位置")
             } else {
                 _state.value = AstroNavLocation.failed("定位超时")
             }

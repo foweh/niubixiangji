@@ -367,7 +367,8 @@ class GeGalleryEditViewModel(application: Application) : AndroidViewModel(applic
             name = "画廊编辑导出",
             chunkSize = current.image.pipelineConfig.stripHeight,
             type = BgTaskType.GENERIC,
-        ) { job ->
+        ) {
+            val job = this
             val full = decodeFullResolution(getApplication(), current.mediaUri)
             if (full == null) {
                 postExportResult(null)

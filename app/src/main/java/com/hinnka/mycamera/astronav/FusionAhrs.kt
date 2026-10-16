@@ -373,19 +373,19 @@ class FusionAhrs(settings: FusionAhrsSettings = FusionAhrsSettings()) {
             FusionConvention.NWU -> {
                 val west = accelerometerG.cross(magnetometer).normalized()
                 val north = west.cross(accelerometerG).normalized()
-                degrees(atan2(west.x, north.x))
+                degrees(atan2(west.x.toDouble(), north.x.toDouble()))
             }
             FusionConvention.ENU -> {
                 val west = accelerometerG.cross(magnetometer).normalized()
                 val north = west.cross(accelerometerG).normalized()
                 val east = west * -1f
-                degrees(atan2(north.x, east.x))
+                degrees(atan2(north.x.toDouble(), east.x.toDouble()))
             }
             FusionConvention.NED -> {
                 val up = accelerometerG * -1f
                 val west = up.cross(magnetometer).normalized()
                 val north = west.cross(up).normalized()
-                degrees(atan2(west.x, north.x))
+                degrees(atan2(west.x.toDouble(), north.x.toDouble()))
             }
         }
     }

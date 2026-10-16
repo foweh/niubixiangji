@@ -509,7 +509,6 @@ object GalleryMediaStore {
             hasAudio = hasAudio,
             videoWidth = videoWidth,
             videoHeight = videoHeight,
-            customProperties = GalleryDelimitedCodec.decodeMap(customProperties),
             exportedUris = GalleryDelimitedCodec.decodeList(exportedUris),
             computationalAperture = computationalAperture,
             computationalBokehStyle = computationalBokehStyle,

@@ -112,10 +112,10 @@ object AppGalleryPreviewBgTasks {
             chunkSize = 1,
             type = BgTaskType.PREVIEW,
             priority = priority,
-        ) { job ->
+        ) {
             val accumulator = newAccumulator(safe, withRgb)
             if (pixels.isEmpty()) {
-                job.report(1, 1)
+                report(1, 1)
                 onResult(accumulator.toHistogram())
                 return@submit
             }
@@ -125,8 +125,8 @@ object AppGalleryPreviewBgTasks {
                 val end = minOf(index + chunk, pixels.size)
                 for (i in index until end) accumulator.add(pixels[i])
                 index = end
-                job.report(index, pixels.size)
-                job.checkYield()
+                report(index, pixels.size)
+                checkYield()
             }
             onResult(accumulator.toHistogram())
         }
@@ -152,12 +152,12 @@ object AppGalleryPreviewBgTasks {
             chunkSize = 1,
             type = BgTaskType.PREVIEW,
             priority = priority,
-        ) { job ->
+        ) {
             val accumulator = newAccumulator(safe, withRgb)
             val width = bitmap.width
             val height = bitmap.height
             if (width <= 0 || height <= 0) {
-                job.report(1, 1)
+                report(1, 1)
                 onResult(accumulator.toHistogram())
                 return@submit
             }
@@ -165,7 +165,7 @@ object AppGalleryPreviewBgTasks {
             val budgetBytes = width.toLong() * desiredRows.toLong() *
                 AppGalleryPreviewRawExportMath.BYTES_PER_PIXEL
             // 内存守卫失败 → 降级到单行批（而不是放弃统计）。
-            val bandRows = if (job.guardMemory(budgetBytes)) desiredRows else 1
+            val bandRows = if (guardMemory(budgetBytes)) desiredRows else 1
             val buffer = IntArray(width * bandRows)
             var y = 0
             while (y < height) {
@@ -174,8 +174,8 @@ object AppGalleryPreviewBgTasks {
                 val count = width * rows
                 for (i in 0 until count) accumulator.add(buffer[i])
                 y += rows
-                job.report(y, height)
-                job.checkYield()
+                report(y, height)
+                checkYield()
             }
             onResult(accumulator.toHistogram())
         }
@@ -195,10 +195,10 @@ object AppGalleryPreviewBgTasks {
             chunkSize = 1,
             type = BgTaskType.PREVIEW,
             priority = priority,
-        ) { job ->
+        ) {
             val exposure = readExposureMetadata(appContext, uri)
-            job.report(1, 1)
-            job.checkYield()
+            report(1, 1)
+            checkYield()
             onResult(exposure)
         }
     }
@@ -228,19 +228,19 @@ object AppGalleryPreviewBgTasks {
             chunkSize = 1,
             type = BgTaskType.PREVIEW,
             priority = priority,
-        ) { job ->
+        ) {
             val targetLongEdge = (safe.rawPreviewMaxDimension * safe.rawRenderWorkingScale)
                 .toInt()
                 .coerceAtLeast(256)
 
             val exposure = readExposureMetadata(appContext, uri)
-            job.report(1, 6)
-            job.checkYield()
+            report(1, 6)
+            checkYield()
 
             var result: AppGalleryPreviewDecodedImage? = null
 
             // 预览优先取内嵌预览：DNG 内嵌（通常全尺寸）JPEG，解码最快且不触碰原始 CFA 数据。
-            val embedded = decodeEmbeddedPreview(appContext, uri, targetLongEdge, job)
+            val embedded = decodeEmbeddedPreview(appContext, uri, targetLongEdge, this)
             if (embedded != null) {
                 result = AppGalleryPreviewDecodedImage(
                     bitmap = embedded,
@@ -249,11 +249,11 @@ object AppGalleryPreviewBgTasks {
                     sampleSize = 1,
                 )
             }
-            job.report(3, 6)
-            job.checkYield()
+            report(3, 6)
+            checkYield()
 
             if (result == null) {
-                val decoded = decodeWithBudget(appContext, uri, targetLongEdge, job)
+                val decoded = decodeWithBudget(appContext, uri, targetLongEdge, this)
                 if (decoded != null) {
                     result = AppGalleryPreviewDecodedImage(
                         bitmap = decoded.first,
@@ -263,13 +263,13 @@ object AppGalleryPreviewBgTasks {
                     )
                 }
             }
-            job.report(5, 6)
-            job.checkYield()
+            report(5, 6)
+            checkYield()
 
             if (result == null) {
                 PLog.w(TAG, "raw preview decode failed for $uri")
             }
-            job.report(6, 6)
+            report(6, 6)
             onResult(result)
         }
     }
@@ -302,33 +302,33 @@ object AppGalleryPreviewBgTasks {
             chunkSize = 1,
             type = BgTaskType.PREVIEW,
             priority = priority,
-        ) { job ->
+        ) {
             val startedAt = System.currentTimeMillis()
             try {
                 val targetLongEdge = (normalized.maxDimension * normalized.workScale).toInt().coerceAtLeast(256)
-                job.report(1, 10)
-                job.checkYield()
+                report(1, 10)
+                checkYield()
 
                 // 1) 解码：优先内嵌预览（快），否则按内存预算采样解码。
                 var usedEmbedded = normalized.useEmbeddedPreview
                 var source = if (normalized.useEmbeddedPreview) {
-                    decodeEmbeddedPreview(appContext, uri, targetLongEdge, job)
+                    decodeEmbeddedPreview(appContext, uri, targetLongEdge, this)
                 } else {
                     null
                 }
                 if (source == null) {
-                    source = decodeEmbeddedPreview(appContext, uri, targetLongEdge, job)
-                        ?: decodeWithBudget(appContext, uri, targetLongEdge, job)?.first
+                    source = decodeEmbeddedPreview(appContext, uri, targetLongEdge, this)
+                        ?: decodeWithBudget(appContext, uri, targetLongEdge, this)?.first
                         ?: throw IllegalStateException("decode failed: no decodable preview for $uri")
                     usedEmbedded = false
                 }
-                job.report(4, 10)
-                job.checkYield()
+                report(4, 10)
+                checkYield()
 
                 // 2) 缩放到导出目标尺寸（工作分辨率已由 targetLongEdge 约束）。
-                val scaled = scaleToTarget(source, targetLongEdge, job)
-                job.report(6, 10)
-                job.checkYield()
+                val scaled = scaleToTarget(source, targetLongEdge, this)
+                report(6, 10)
+                checkYield()
 
                 val target = AppGalleryPreviewRawExportMath.targetSize(
                     scaled.width,
@@ -354,19 +354,19 @@ object AppGalleryPreviewBgTasks {
                     stream.flush()
                     if (!ok) throw IllegalStateException("jpeg compress returned false")
                 }
-                job.report(8, 10)
-                job.checkYield()
+                report(8, 10)
+                checkYield()
 
                 // 4) 复制 EXIF（可配；逐标签分片让出）。
                 if (normalized.preserveExif) {
-                    copyExifTags(appContext, uri, outputFile, normalized.chunkRows, job)
+                    copyExifTags(appContext, uri, outputFile, normalized.chunkRows, this)
                 }
                 val byteCount = outputFile.length()
                 if (finalBitmap !== scaled) finalBitmap.recycle()
                 if (scaled !== source) scaled.recycle()
                 source.recycle()
 
-                job.report(10, 10)
+                report(10, 10)
                 onResult(
                     Result.success(
                         AppGalleryPreviewRawExportResult(

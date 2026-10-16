@@ -413,8 +413,8 @@ class VideoRecorder(
         val height = requestedSize.height
         // videomodes §14 + review P1 合并：输入侧开放 1~200Mbps（clampBitrateMbps），
         // 上界仍由 VideoBitrateLimits.maxBps() 兜底（相对 review 版本，上界语义未变）。
-        val videoBitrate = (VideoEncodePolicy.clampBitrateMbps(requestedBitrateMbps) * 1_000_000)
-            .coerceIn(2_000_000, VideoBitrateLimits.maxBps())
+        val videoBitrate = (VideoEncodePolicy.clampBitrateMbps(requestedBitrateMbps) * 1_000_000L)
+            .coerceIn(2_000_000L, VideoBitrateLimits.maxBps())
 
         videoEncoder = MediaCodec.createEncoderByType(requestedCodecMime).apply {
             val capabilities = codecInfo.getCapabilitiesForType(requestedCodecMime)

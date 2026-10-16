@@ -22,6 +22,7 @@ import com.hinnka.mycamera.appgallery.AppGalleryFolderStore
 import com.hinnka.mycamera.appgallery.AppGalleryGeoPoint
 import com.hinnka.mycamera.appgallery.AppGalleryItem
 import com.hinnka.mycamera.appgallery.AppGalleryPlaceCluster
+import com.hinnka.mycamera.appgallery.AppGalleryPlaceClustering
 import com.hinnka.mycamera.appgallery.AppGalleryQuery
 import com.hinnka.mycamera.appgallery.AppGalleryRepository
 import com.hinnka.mycamera.appgallery.AppGalleryScanBridge

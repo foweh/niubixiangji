@@ -156,6 +156,7 @@ data class MfsrConfig(
 
         const val DENOISE_RADIUS_MIN = 1
         const val DENOISE_RADIUS_MAX = 4
+        const val DEFAULT_DENOISE_RADIUS = 2
 
         const val SHARPEN_AMOUNT_MIN = 0f
         const val SHARPEN_AMOUNT_MAX = 1f

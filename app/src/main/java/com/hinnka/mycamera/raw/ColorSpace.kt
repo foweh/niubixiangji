@@ -89,6 +89,7 @@ enum class ColorSpace(
         0.159597f, 0.840403f,
         0.036598f, 0.000105f,
         0.345704f, 0.358540f
+    ),
     /**
      * ARRI Wide Gamut 3（LogC3 的原生色域，D65 白点），主色色度取自 ARRI 公开规格。
      * ⚠️ 必须追加在 HNCS 之后（ordinal 12）：既有 ordinal 0..11 已写进 `.plut` 头部与偏好表。
@@ -98,7 +99,6 @@ enum class ColorSpace(
         0.2210f, 0.8480f,
         0.0861f, -0.1020f,
         0.3127f, 0.3290f
-    ),
     ),
 ;
 

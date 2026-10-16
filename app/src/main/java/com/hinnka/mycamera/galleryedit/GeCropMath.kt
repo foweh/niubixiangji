@@ -354,9 +354,9 @@ object GeCropMath {
         // 对称扩张模式：以原框中心重新定位，四边均匀变化（用于"中心缩放"手势）
         val w = constrained.width
         val h = constrained.height
-        val left = (safe.centerX - w / 2f).coerceIn(0f, 1f - w)
-        val top = (safe.centerY - h / 2f).coerceIn(0f, 1f - h)
-        return GeCropRect(left, top, left + w, top + h)
+        val centeredLeft = (safe.centerX - w / 2f).coerceIn(0f, 1f - w)
+        val centeredTop = (safe.centerY - h / 2f).coerceIn(0f, 1f - h)
+        return GeCropRect(centeredLeft, centeredTop, centeredLeft + w, centeredTop + h)
     }
 
     /**

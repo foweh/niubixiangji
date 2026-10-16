@@ -77,7 +77,7 @@ object AppGalleryShareKit {
         }.onFailure { PLog.w(TAG, "FileProvider failed for ${item.id}", it) }.getOrNull()
     }
 
-    /** 分享用的 MIME 集合（去重、保持顺序，空则回落 `*/*`）。 */
+    /** 分享用的 MIME 集合（去重、保持顺序，空则回落为通配 MIME）。 */
     fun mimeTypesOf(items: List<AppGalleryItem>): List<String> =
         items.map { it.mimeTypeOrFallback() }.distinct()
 

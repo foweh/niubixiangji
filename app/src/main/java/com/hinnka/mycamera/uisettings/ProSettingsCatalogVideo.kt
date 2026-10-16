@@ -145,8 +145,8 @@ object ProSettingsCatalogVideo {
             "开尔文；0 = 自动，或 2000..12000", VideoModesRanges.MANUAL_AWB_K_AUTO,
             VideoModesRanges.MANUAL_AWB_K_MIN, VideoModesRanges.MANUAL_AWB_K_ABSOLUTE_MAX, 50, "K", "BMD,MotionCam"))
         add(ProSettingBuilder.num("videomodes.manual.focusDiopters", vk("manual.focus_diopters"),
-            "手动焦距（屈光度）", "-1 = 自动；0 = 无穷远", VideoModesRanges.MANUAL_FOCUS_DIPTER_AUTO,
-            VideoModesRanges.MANUAL_FOCUS_DIPTER_MIN, VideoModesRanges.MANUAL_FOCUS_DIPTER_ABSOLUTE_MAX,
+            "手动焦距（屈光度）", "-1 = 自动；0 = 无穷远", VideoModesRanges.MANUAL_FOCUS_DIOPTER_AUTO,
+            VideoModesRanges.MANUAL_FOCUS_DIOPTER_MIN, VideoModesRanges.MANUAL_FOCUS_DIOPTER_ABSOLUTE_MAX,
             2, "dpt", "BMD"))
         add(ProSettingBuilder.sw("videomodes.manual.lockFocus", vk("manual.lock_focus"), "锁定对焦",
             "录制中锁 AF", false, "BMD,MotionCam"))

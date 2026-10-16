@@ -54,7 +54,7 @@ object VideoModesBackgroundRunner {
             type = type,
             priority = priority,
             onFinish = onFinish,
-        ) { job ->
+        ) {
             if (total == 0) return@submit
             val batches = TimelapsePlanner.captureBatches(total, chunk)
             var done = 0
@@ -65,7 +65,7 @@ object VideoModesBackgroundRunner {
                     if (perFrameBytes > 0L) {
                         // 内存守卫：超预算就把本片减半（**降级而不是失败**，PATTERN_SPEC §4）。
                         var guardCount = 0
-                        while (size > 1 && !job.guardMemory(perFrameBytes * size)) {
+                        while (size > 1 && !guardMemory(perFrameBytes * size)) {
                             size /= 2
                             guardCount++
                         }
@@ -77,11 +77,11 @@ object VideoModesBackgroundRunner {
                         }
                     }
                     val end = (start + size - 1).coerceAtMost(batch.last)
-                    onChunk(job, start..end)
+                    onChunk(this, start..end)
                     done += end - start + 1
-                    job.report(done, total)
+                    report(done, total)
                     // 分片末尾必调：暂停/取消响应 + CPU 节流 + 让出时间片。
-                    job.checkYield()
+                    checkYield()
                     start = end + 1
                 }
             }

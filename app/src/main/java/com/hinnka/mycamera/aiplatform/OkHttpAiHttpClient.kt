@@ -18,7 +18,7 @@ import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
 import okio.BufferedSink
-import okio.Okio
+import okio.source
 import java.io.File
 import java.io.IOException
 import java.util.concurrent.TimeUnit
@@ -343,7 +343,7 @@ class OkHttpAiHttpClient(
                 )
                 sink.writeUtf8("Content-Type: ${request.fileContentType}\r\n\r\n")
                 request.fileProvider().use { input ->
-                    Okio.source(input).use { source -> sink.writeAll(source) }
+                    input.source().use { source -> sink.writeAll(source) }
                 }
                 sink.writeUtf8("\r\n--$boundary--\r\n")
                 sink.flush()

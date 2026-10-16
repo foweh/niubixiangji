@@ -96,8 +96,9 @@ class SuperResTileRenderer(
 
                 val planar = SuperResBitmapCodec.decodeRgbPlanar(srcCrop, tile.width, tile.height)
                 val raw = if (maskSource != null) {
+                    val maskBmp = maskSource
                     val maskCrop = runCatching {
-                        Bitmap.createBitmap(maskSource, tile.x, tile.y, tile.width, tile.height)
+                        Bitmap.createBitmap(maskBmp, tile.x, tile.y, tile.width, tile.height)
                     }.getOrNull()
                     val mask = if (maskCrop != null) {
                         val m = SuperResBitmapCodec.decodeMask(

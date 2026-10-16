@@ -36,7 +36,7 @@ object ViewfinderHistogramAnalyzer {
             return ViewfinderHistogram.empty(bins)
         }
         // 防御：调用方可能传入与 width*height 不一致（更短）的数组，绝不越界。
-        val usable = minOf(pixels.size, width.toLong() * height.toLong()).toInt()
+        val usable = minOf(pixels.size.toLong(), width.toLong() * height.toLong()).toInt()
         if (usable <= 0) return ViewfinderHistogram.empty(bins)
 
         val luminance = IntArray(bins)

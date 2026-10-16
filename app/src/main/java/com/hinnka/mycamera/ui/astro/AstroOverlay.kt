@@ -203,7 +203,8 @@ fun AstroOverlay(
                     ?: rotationMatrix
                     ?: FloatArray(9) { i ->
                         if (i % 4 == 0) 1f else 0f // 单位矩阵回退
-                    }                val lstHours = (state.manualOffsetDegrees + dragOffsetDeg) / 15f
+                    }
+                val lstHours = (state.manualOffsetDegrees + dragOffsetDeg) / 15f
                 val lat = state.observerLatitudeDegrees
                 val rotDeg = -state.displayRotationDegrees.toFloat()
 

@@ -9,8 +9,13 @@ import android.os.Bundle
 import android.view.Surface
 import androidx.core.app.ActivityCompat
 import com.hinnka.mycamera.lut.LutConfig
+import com.hinnka.mycamera.logvideo.LogVideoConfigStore
+import com.hinnka.mycamera.logvideo.LogVideoLutDecision
 import com.hinnka.mycamera.model.ColorRecipeParams
 import com.hinnka.mycamera.utils.PLog
+import com.hinnka.mycamera.video.VideoEncoderColorRequest
+import com.hinnka.mycamera.video.VideoLogProfile
+import com.hinnka.mycamera.video.resolveVideoEncoderColorConfig
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
@@ -265,7 +270,8 @@ class LivePhotoRecorder(
                         hasActiveLut = lutConfig != null && params?.isDefault() == false,
                     ),
                 ),
-            ).apply {                initialize(inputSurface!!, sharedContext, sharedDisplay)
+            ).apply {
+                initialize(inputSurface!!, sharedContext, sharedDisplay)
             }
 
             startDraining()
@@ -452,34 +458,10 @@ class LivePhotoRecorder(
      * 触发快照 (拍照时调用)
      */
     fun snapshot(): Long? {
-        val plan = LogLivePhotoIntegrator.plan(
-            config = LogVideoConfigStore.current,
-            profile = profile,
-            isLivePhotoEnabled = true,
-            lutAvailable = lutConfig != null,
-            stillFrameSizeBytes = width.toLong() * height * 4L,
-        )
-        val table = ActiveLogCurveTable.current(plan.stillCurve ?: LogCurveRecipe.DEFAULT)
-        if (plan.needsStillFrameJob && LogLivePhotoIntegrator.shouldUseBackgroundJob(width * height)) {
-            BgJobRunner.submit(
-                name = "LogLivePhotoStill",
-                chunkSize = LogVideoFrameProcessor.DEFAULT_CHUNK_ROWS,
-                type = BgTaskType.AI_LUT,
-                priority = BgJobPriority.LOW,
-            ) { job ->
-                LogVideoFrameProcessor.encodeArgbInPlace(
-                    pixels = pixels, width = width, height = height,
-                    table = table,
-                    sink = object : LogFrameJobSink {
-                        override val isCancelled get() = job.isCancelled
-                        override fun report(done: Int, total: Int) = job.report(done, total)
-                        override fun checkYield() = job.checkYield()
-                    },
-                )
-            }
-        } else {
-            LogVideoFrameProcessor.encodeArgbInPlace(pixels, width, height, table)
-        }
+        // 注：静止帧的 CPU Log 编码（LogVideoFrameProcessor.encodeArgbInPlace）需要静止帧的
+        // ARGB 像素数组，而本录制器只经 GPU input surface 录制视频片段，不持有静止帧像素；
+        // 该接线块属于出图管线（Camera2Controller），不在此类持有 pixels/profile/lutConfig，
+        // 故按基线行为直接做时间点/关键帧保留。
         if (!isRunning) return null
 
         // 使用最近一帧的时间戳作为基准，避免时钟源不一致问题

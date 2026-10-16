@@ -108,7 +108,7 @@ fun AiPlatformSettingsSection(
             )
             status[capability] = when (result) {
                 is AiCallResult.Success -> okText
-                is AiCallResult.Failure -> probeResultText(result.reason)
+                is AiCallResult.Failure -> appContext.getString(probeResultResId(result.reason))
             }
             testing[capability] = false
         }
@@ -266,28 +266,29 @@ private fun defaultConfig(capability: AiCapability): AiEndpointConfig =
         builtInApiKey = BuildConfig.BUILT_IN_API_KEY,
     )
 
-/** 失败归因 → 用户可读文案（与 [AiNotices.stringKey] 一一对应）。 */
+/** 失败归因 → 字符串资源 id（纯函数，供 Composable 与非 Composable 的协程复用）。 */
+@StringRes
+private fun probeResultResId(reason: AiFailureReason): Int = when (reason) {
+    AiFailureReason.Disabled -> R.string.ai_error_disabled
+    AiFailureReason.MissingCredential -> R.string.ai_error_missing_credential
+    AiFailureReason.Offline -> R.string.ai_error_offline
+    is AiFailureReason.Timeout -> R.string.ai_error_timeout
+    is AiFailureReason.Http -> when (reason.code) {
+        401, 403 -> R.string.ai_error_unauthorized
+        429 -> R.string.ai_error_rate_limited
+        in 500..599 -> R.string.ai_error_server
+        else -> R.string.ai_error_http
+    }
+    is AiFailureReason.Parse -> R.string.ai_error_parse
+    is AiFailureReason.CleartextBlocked -> R.string.ai_error_cleartext
+    is AiFailureReason.Tls -> R.string.ai_error_tls
+    AiFailureReason.Cancelled -> R.string.ai_error_cancelled
+    is AiFailureReason.Unknown -> R.string.ai_error_unknown
+}
+
 @Composable
 private fun probeResultText(reason: AiFailureReason): String =
-    stringResource(
-        when (reason) {
-            AiFailureReason.Disabled -> R.string.ai_error_disabled
-            AiFailureReason.MissingCredential -> R.string.ai_error_missing_credential
-            AiFailureReason.Offline -> R.string.ai_error_offline
-            is AiFailureReason.Timeout -> R.string.ai_error_timeout
-            is AiFailureReason.Http -> when (reason.code) {
-                401, 403 -> R.string.ai_error_unauthorized
-                429 -> R.string.ai_error_rate_limited
-                in 500..599 -> R.string.ai_error_server
-                else -> R.string.ai_error_http
-            }
-            is AiFailureReason.Parse -> R.string.ai_error_parse
-            is AiFailureReason.CleartextBlocked -> R.string.ai_error_cleartext
-            is AiFailureReason.Tls -> R.string.ai_error_tls
-            AiFailureReason.Cancelled -> R.string.ai_error_cancelled
-            is AiFailureReason.Unknown -> R.string.ai_error_unknown
-        },
-    )
+    stringResource(probeResultResId(reason))
 
 @StringRes
 private fun capabilityTitleRes(capability: AiCapability): Int = when (capability) {
@@ -299,6 +300,8 @@ private fun capabilityTitleRes(capability: AiCapability): Int = when (capability
     AiCapability.LUT_RECOMMEND -> R.string.ai_platform_cap_lut_recommend
     AiCapability.WHITE_BALANCE -> R.string.ai_platform_cap_white_balance
     AiCapability.SCENE_RECOGNITION -> R.string.ai_platform_cap_scene_recognition
+    // DECLINATION 不在 SETTINGS_ORDER（设置页不展示），专用标题串未补；借相邻通用串保持穷尽。
+    AiCapability.DECLINATION -> R.string.ai_platform_cap_scene_recognition
 }
 
 private const val PROBE_SNIPPET_CHARS = 200

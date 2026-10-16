@@ -194,8 +194,12 @@ class ViewfinderOverlayController(
             placements = emptyList()
             return
         }
+        val definition = when (resolvedSticker) {
+            is ResolvedSticker.BuiltIn -> resolvedSticker.definition
+            is ResolvedSticker.External -> resolvedSticker.definition
+        }
         placements = listOf(
-            FaceStickerAnchorMapper.placementFor(anchor, snapshot, resolvedSticker.definition),
+            FaceStickerAnchorMapper.placementFor(anchor, snapshot, definition),
         )
     }
 

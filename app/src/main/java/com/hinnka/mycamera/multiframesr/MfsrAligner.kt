@@ -109,7 +109,7 @@ internal object MfsrBlockMatchAligner {
                 }
             }
         }
-        val conf = bestNcc.coerceIn(0f, 1f)
+        val conf = bestNcc.coerceIn(0.0, 1.0).toFloat()
         return MfsrShift(bestDx * step.toFloat(), bestDy * step.toFloat(), conf)
     }
 

@@ -46,7 +46,8 @@ object UnsharpMaskProcessor {
             val channel = image.channel(c)
             val blurred = BoxBlur.gaussianApprox(channel, width, height, radius)
             sharpenChannelInPlace(channel, blurred, clamped.amount, clamped.threshold)
-        }        image.toArgb(out, pixels)
+        }
+        image.toArgb(out, pixels)
         return out
     }
 

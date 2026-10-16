@@ -123,10 +123,10 @@ object SuperResPipeline {
             chunkSize = batchSize,
             type = BgTaskType.SUPER_RES,
             priority = priority,
-        ) { job ->
-            val effectiveBatch = job.batchSizeFor(batchSize).coerceAtLeast(1)
+        ) {
+            val effectiveBatch = batchSizeFor(batchSize).coerceAtLeast(1)
             PLog.i(TAG, "$jobName start batch=$effectiveBatch degraded=${decision.degradedConfig != null}")
-            job.report(0, 1)
+            report(0, 1)
             try {
                 val result = when {
                     // 1) 能力不足/被关闭/输入非法：不占算力，直接回退原图。
@@ -137,7 +137,7 @@ object SuperResPipeline {
                     modelFile == null || !modelFile.isFile ->
                         Result(decision, null, "model_missing")
 
-                    else -> runTask(job, kind, source, mask, modelFile, decision, clamped)
+                    else -> runTask(this, kind, source, mask, modelFile, decision, clamped)
                 }
                 onResult(result)
             } catch (e: Throwable) {

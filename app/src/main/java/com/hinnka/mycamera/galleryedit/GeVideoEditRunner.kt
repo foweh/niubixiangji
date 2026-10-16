@@ -209,8 +209,10 @@ object GeVideoEditRunner {
     }
 
     /** 多段拼接：一个 [EditedMediaItemSequence] 内按顺序排列即首尾拼接。 */
-    fun buildComposition(items: List<EditedMediaItem>): Composition =
-        Composition.Builder(listOf(EditedMediaItemSequence.Builder(items.toTypedArray()).build())).build()
+    fun buildComposition(items: List<EditedMediaItem>): Composition {
+        val sequence = EditedMediaItemSequence.Builder(*items.toTypedArray()).build()
+        return Composition.Builder(sequence).build()
+    }
 
     /** 构建 Transformer（Main Looper 驱动；编码器可配置、可选允许降级）。 */
     fun buildTransformer(context: Context, options: GeVideoExportOptions): Transformer {
@@ -270,7 +272,8 @@ object GeVideoEditRunner {
             onFinish = { job ->
                 PLog.i(TAG, "video edit job finished: ${job.state.value.status}")
             },
-        ) { job ->
+        ) {
+            val job = this
             val result = runBlocking {
                 runEditPipeline(job, context, safeSpec, outputFile, safeOptions, lutConfig, recipeParams, onProgress)
             }

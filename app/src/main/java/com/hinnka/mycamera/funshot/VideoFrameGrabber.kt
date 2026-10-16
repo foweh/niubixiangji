@@ -1,7 +1,9 @@
 package com.hinnka.mycamera.funshot
 
 import kotlin.math.max
+import kotlin.math.roundToDouble
 import kotlin.math.roundToInt
+import kotlin.math.roundToLong
 
 /** 一次抽帧请求（时间戳 + 输出尺寸 + 该帧在 GIF 中的延迟）。 */
 data class FunVideoFrameRequest(

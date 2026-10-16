@@ -88,6 +88,9 @@ import com.hinnka.mycamera.video.VideoFpsPreset
 import com.hinnka.mycamera.video.VideoLogProfile
 import com.hinnka.mycamera.video.VideoResolutionPreset
 import com.hinnka.mycamera.video.VideoStabilizationMode
+import com.hinnka.mycamera.logvideo.LogVideoConfig
+import com.hinnka.mycamera.logvideo.LogVideoConfigStore
+import com.hinnka.mycamera.logvideo.LogVideoCurveSelector
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.isActive
@@ -237,6 +240,9 @@ fun CameraScreen(
     val eyeFocusEnabled by viewModel.eyeFocusEnabled.collectAsState()
     val keepScreenOn by viewModel.keepScreenOn.collectAsState(initial = false)
     val currentLutId by viewModel.currentLutId.collectAsState()
+    val logVideoConfig by LogVideoConfigStore.flow.collectAsState()
+    val logVideoBaking by viewModel.logVideoBaking.collectAsState()
+    val logVideoBakedLutId = logVideoConfig.resolvedRestoreLutId().takeIf { it.isNotEmpty() }
     val lutNameOverlayState = rememberLutNameOverlayState()
     val currentRecipeParams by viewModel.currentRecipeParams.collectAsState()
     val lutSelectorMode by viewModel.lutSelectorMode.collectAsState()
@@ -1570,9 +1576,8 @@ fun CameraScreen(
                             }
                             val astroNavViewport = remember(astroNavUi.attitude) {
                                 com.hinnka.mycamera.astronav.AstroNavViewport(
-                                    displayRotationDegrees = state.displayRotationDegrees,
+                                    displayRotationDegrees = state.deviceRotation,
                                     cameraAxis = com.hinnka.mycamera.astronav.CameraAxis.BACK,
-                                    horizontalFovDegrees = state.horizontalFovDegrees,
                                 )
                             }
 

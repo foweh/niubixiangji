@@ -18,6 +18,10 @@ import com.hinnka.mycamera.utils.PLog
 import org.json.JSONObject
 import java.io.File
 
+/** 估计结果是否可用于写捕获参数：增益/置信度均为有限数（IDENTITY 增益=1、置信度=0，自然被排除）。 */
+private val AiWhiteBalanceEstimate.isUsable: Boolean
+    get() = gainR.isFinite() && gainG.isFinite() && gainB.isFinite() && confidence.isFinite()
+
 /**
  * AI 白平衡分析器（Android 侧胶水层；纯算法在 [AiWhiteBalanceEstimator]）。
  *

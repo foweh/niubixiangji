@@ -96,7 +96,11 @@ import com.hinnka.mycamera.superres.SuperResRuntime
 import com.hinnka.mycamera.ui.uisettings.ProSettingsScreen
 import com.hinnka.mycamera.ui.settings.PresetEditorScreen
 import com.hinnka.mycamera.ui.settings.PresetManagementScreen
+import com.hinnka.mycamera.ui.settings.SettingsScreen
 import com.hinnka.mycamera.ui.theme.PhotonCameraTheme
+import com.hinnka.mycamera.appgallerypreview.AppGalleryPreviewRequest
+import com.hinnka.mycamera.appgallerypreview.AppGalleryPreviewMediaSource
+import com.hinnka.mycamera.ui.appgallerypreview.AppGalleryPreviewScreen
 import com.hinnka.mycamera.update.AppUpdateManager
 import com.hinnka.mycamera.utils.BuglyHelper
 import com.hinnka.mycamera.utils.DeviceUtil
@@ -138,7 +142,9 @@ object Routes {
         append("&index=").append(index)
         append("&total=").append(total)
         source?.let { append("&source=").append(Uri.encode(it)) }
-    }    const val SETTINGS = "settings"
+    }
+
+    const val SETTINGS = "settings"
     const val FILTER_MANAGEMENT = "filter_management?locateLutId={locateLutId}&videoLut={videoLut}"
     const val FRAME_MANAGEMENT = "frame_management"
     const val FRAME_EDITOR = "frame_editor?frameId={frameId}&imageFrame={imageFrame}"
@@ -155,7 +161,8 @@ object Routes {
     const val PHANTOM_PIP_CROP = "phantom_pip_crop"
     const val SUPER_RES_MODELS = "super_res_models"
     /** uisettings：统一专业设置页（独立新入口，不在既有 SettingsScreen 内）。 */
-    const val PRO_SETTINGS = "pro_settings"    const val COLOR_WALK = "color_walk"
+    const val PRO_SETTINGS = "pro_settings"
+    const val COLOR_WALK = "color_walk"
     const val FILM_LIBRARY = "film_library"
     const val FILM_DETAIL = "film_detail/{filmId}"
 

@@ -187,6 +187,11 @@ import com.hinnka.mycamera.superres.SuperResConfig
 import com.hinnka.mycamera.superres.SuperResConfigStore
 import com.hinnka.mycamera.superres.SuperResRuntime
 import com.hinnka.mycamera.superres.SuperResSettingsSection
+import com.hinnka.mycamera.aiplatform.ui.AiFeatureSettingsSection
+import com.hinnka.mycamera.longexposure.LongExposureConfig
+import com.hinnka.mycamera.longexposure.LongExposureLimits
+import com.hinnka.mycamera.astroplan.AstroPlanConfig
+import com.hinnka.mycamera.astroplan.AstroPlanner
 
 private enum class SettingsPage {
     ASSIST,
@@ -319,11 +324,20 @@ private fun AppLanguageSetting() {
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
+fun SettingsScreen(
+    viewModel: CameraViewModel,
+    onBack: () -> Unit,
+    onFilterManagementClick: () -> Unit,
     onSuperResSettingsClick: () -> Unit,
+    onVideoFilterManagementClick: () -> Unit,
+    onFrameManagementClick: () -> Unit,
+    onPhantomPipCropClick: () -> Unit,
+    onPresetManagementClick: () -> Unit,
     // ↓↓↓ uisettings：跳到独立的新页面「Pro 设置」（默认空实现，未接线时入口可见但点了没反应）
     onProSettingsClick: () -> Unit = {},
     modifier: Modifier = Modifier
-) {    val state by viewModel.state.collectAsState()
+) {
+    val state by viewModel.state.collectAsState()
     val userPreferences by viewModel.userPreferences.collectAsState()
     val showLevelIndicator by viewModel.showLevelIndicator.collectAsState(initial = false)
     val focusPeakingEnabled by viewModel.focusPeakingEnabled.collectAsState(initial = true)
@@ -1901,6 +1915,11 @@ private fun AppLanguageSetting() {
                     }
                 }
 
+                    // D类挂点（交付说明登记）：LongExposure/AstroPlan 设置脚手架——引用未定义的
+                    // NumberSettingItem/longExposureConfig/astroConfig/updateData/
+                    // LongExposureConfig.KEY_FRAME_COUNT/KEY_PREVIEW/previewEnabled，
+                    // 源码包自带但从未编译通过；待功能 owner 实现后恢复（勿删，整块注释保留）。
+                    /*
                     Spacer(modifier = Modifier.height(24.dp))
 
                     SettingsSection(title = stringResource(R.string.le_section_title)) {
@@ -1947,7 +1966,10 @@ private fun AppLanguageSetting() {
                         val preview = remember { AstroPlanner.plan(System.currentTimeMillis(), astroConfig) }
                         Text(stringResource(R.string.astro_plan_moon_illumination) + "：" +
                             AstroPlanner.moonIlluminationPercent(preview.moonIlluminationFraction).toString() + "%")
-                    }                    // 照片模式设置
+                    }
+                    */
+
+                    // 照片模式设置
                     SettingsSection(
                         title = stringResource(R.string.settings_section_photo_mode),
                         showTitle = false

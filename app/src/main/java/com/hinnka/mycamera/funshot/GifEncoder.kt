@@ -33,7 +33,9 @@ class FunGifEncoder(
     /** 写文件头 + 逻辑屏幕描述符 + 全局调色板（+ 循环扩展）。重复调用无效。 */
     fun writeHeader(globalPalette: IntArray) {
         if (headerWritten) return
-        val padded = FunGifPalette.padToPowerOfTwo(globalPalette.ifEmpty { intArrayOf(0xFF000000.toInt()) })
+        val padded = FunGifPalette.padToPowerOfTwo(
+            if (globalPalette.isEmpty()) intArrayOf(0xFF000000.toInt()) else globalPalette
+        )
         val bits = FunGifPalette.sizeBits(padded.size)
         writeAscii(HEADER)
         writeShort(width)
@@ -80,7 +82,9 @@ class FunGifEncoder(
         val activePalette: IntArray
         val useLocal = localPalette != null
         if (useLocal) {
-            activePalette = FunGifPalette.padToPowerOfTwo(localPalette!!.ifEmpty { intArrayOf(0xFF000000.toInt()) })
+            activePalette = FunGifPalette.padToPowerOfTwo(
+                if (localPalette!!.isEmpty()) intArrayOf(0xFF000000.toInt()) else localPalette
+            )
         } else {
             activePalette = IntArray(0)
         }

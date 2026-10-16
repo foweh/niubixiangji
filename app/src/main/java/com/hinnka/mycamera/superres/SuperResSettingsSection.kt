@@ -1,5 +1,6 @@
 package com.hinnka.mycamera.superres
 
+import com.hinnka.mycamera.R
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column

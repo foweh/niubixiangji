@@ -266,7 +266,8 @@ data class ProSettingSpec(
             is ProRange.Stepped -> {
                 val c = parsed.coerceIn(r.min.toDouble(), r.max.toDouble())
                 val step = if (r.step <= 0L) 1L else r.step
-                val snapped = r.min + Math.round((c - r.min) / step.toDouble()) * step
+                val snapped = r.min.toDouble() +
+                    Math.round((c - r.min.toDouble()) / step.toDouble()) * step.toDouble()
                 snapped.coerceIn(r.min.toDouble(), r.max.toDouble()) to (snapped != parsed)
             }
         }

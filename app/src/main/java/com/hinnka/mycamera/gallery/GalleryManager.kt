@@ -111,7 +111,6 @@ import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
-import kotlin.coroutines.resume
 import kotlin.io.copyTo
 import kotlin.io.deleteRecursively
 import kotlin.io.extension
@@ -3041,7 +3040,7 @@ object GalleryManager {
         colorSpace: ColorSpace,
     ): Bitmap {
         // P0-8：HDR 合并（最重的一步）改走 BgJobRunner 异步入口，内存守卫/取消/节流生效。
-        val stackResult = awaitBgJob { cb ->
+        val stackResult = awaitBgJob<Bitmap> { cb ->
             MultiFrameStacker.processHdrBurstYuvAsync(
                 frames = buildYuvHdrStackFrames(
                     images = images,

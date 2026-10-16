@@ -56,7 +56,7 @@ class MotionShutterTrigger(
             PLog.w(TAG, "no accelerometer on this device, motion trigger unavailable")
             return false
         }
-        val requested = configProvider().coerced()
+        val requested = configProvider().coerceWithReport().value
         if (!requested.enabled) {
             PLog.i(TAG, "motion trigger disabled by config")
             return false
@@ -100,7 +100,7 @@ class MotionShutterTrigger(
 
     /** 配置变化时调用：未在录制中则换用新阈值/窗口。 */
     fun refreshConfig() {
-        val requested = configProvider().coerced()
+        val requested = configProvider().coerceWithReport().value
         effectiveConfig = requested
         if (!gateRef.isRecording) {
             gateRef = MotionTriggerGate(requested)

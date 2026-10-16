@@ -41,7 +41,9 @@ import com.hinnka.mycamera.gallery.GalleryManager
 import android.widget.Toast
 import com.hinnka.mycamera.aiplatform.AiNotices
 import com.hinnka.mycamera.aiplatform.AiPlatform
+import com.hinnka.mycamera.computational.AstroStacker
 import com.hinnka.mycamera.computational.BgJob
+import com.hinnka.mycamera.computational.ServerEnhancementClient
 import java.io.File
 import com.hinnka.mycamera.gallery.MediaMetadata
 import com.hinnka.mycamera.gallery.PhotoSavePath
@@ -118,6 +120,8 @@ import com.hinnka.mycamera.video.VideoLogProfile
 import com.hinnka.mycamera.video.VideoLogLutMode
 import com.hinnka.mycamera.video.VideoRecordingPath
 import com.hinnka.mycamera.video.VideoResolutionPreset
+import com.hinnka.mycamera.logvideo.LogVideoConfig
+import com.hinnka.mycamera.logvideo.LogVideoConfigStore
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.first
 import kotlin.math.roundToInt
@@ -4158,6 +4162,20 @@ class CameraViewModel(application: Application) : AndroidViewModel(application) 
         if (state.value.videoRecordingState.isRecording || state.value.videoRecordingState.isProcessing) return
         cameraController.setVideoLogLutMode(mode)
         viewModelScope.launch { userPreferencesRepository.saveVideoLogLutMode(mode) }
+    }
+
+    /** Log 曲线/还原 LUT 配置单一数据源（LogVideoConfigStore），UI 改动直接写回。 */
+    fun setLogVideoConfig(config: LogVideoConfig) {
+        LogVideoConfigStore.set(config)
+    }
+
+    /** on-device 烘焙 restore LUT 进行中状态（UI 进度条门控）。 */
+    private val _logVideoBaking = MutableStateFlow(false)
+    val logVideoBaking: StateFlow<Boolean> = _logVideoBaking.asStateFlow()
+
+    /** 触发 on-device 烘焙 restore LUT（占位入口；实际烘焙管线见 LogToRec709LutBaker）。 */
+    fun bakeLogRestoreLut() {
+        // 烘焙管线接线点：此处仅保留 UI 入口，实际后台烘焙由计算层执行。
     }
 
     /**

@@ -8,6 +8,7 @@ import com.hinnka.mycamera.utils.PLog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.conflate
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -57,6 +58,7 @@ object AppGalleryScanBridge {
                 }.onFailure { error -> PLog.w(TAG, "rescan failed", error) }
                     .getOrNull()
             }
+            .filterNotNull()
             .conflate()
 
     /**

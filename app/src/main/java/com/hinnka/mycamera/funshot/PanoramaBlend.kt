@@ -321,7 +321,7 @@ object FunExposureCompensator {
         val raw = referenceMeanLuma / mean
         if (!raw.isFinite()) return 1f
         val limit = if (gainLimit.isFinite()) gainLimit.coerceIn(1f, 4f) else 1.6f
-        return raw.coerceIn(1.0 / limit, limit).toFloat()
+        return raw.coerceIn(1.0 / limit, limit.toDouble()).toFloat()
     }
 
     /** 相对亮度差是否超限（诊断用）。 */

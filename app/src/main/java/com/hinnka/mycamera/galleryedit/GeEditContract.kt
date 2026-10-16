@@ -24,7 +24,7 @@ enum class GeMediaType(val rawValue: String) {
             }
         }
 
-        /** 依据 MIME 推断（image/* → IMAGE，video/*、audio/* → VIDEO）。 */
+        /** 依据 MIME 推断（image 开头 → IMAGE，video / audio 开头 → VIDEO）。 */
         fun fromMime(mimeType: String?): GeMediaType? {
             val mime = mimeType?.trim()?.lowercase().orEmpty()
             return when {

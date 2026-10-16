@@ -56,11 +56,11 @@ object FunshotPanoramaTask {
             type = BgTaskType.PANORAMA,
             priority = priority,
             onFinish = onFinish,
-        ) { job ->
-            val bridge = PanoramaJobBridge(job)
+        ) {
+            val bridge = PanoramaJobBridge(this)
             val session = FunshotPanoramaSession(effective, bridge, bridge)
             val total = frames.size
-            val batch = job.batchSizeFor(total).coerceAtLeast(1)
+            val batch = batchSizeFor(total).coerceAtLeast(1)
             var index = 0
             while (index < total) {
                 val end = minOf(index + batch, total)
@@ -69,8 +69,8 @@ object FunshotPanoramaTask {
                     if (bitmap.isRecycled) continue
                     session.ingest(FunshotBitmaps.toArgbFrame(bitmap))
                 }
-                job.report(end, total)
-                job.checkYield()
+                report(end, total)
+                checkYield()
                 index = end
             }
             val result = session.finish()

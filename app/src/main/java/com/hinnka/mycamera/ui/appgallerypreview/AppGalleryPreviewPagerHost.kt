@@ -13,6 +13,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
@@ -22,6 +23,7 @@ import androidx.compose.ui.unit.IntOffset
 import com.hinnka.mycamera.appgallerypreview.AppGalleryPreviewConfig
 import com.hinnka.mycamera.appgallerypreview.AppGalleryPreviewSwipeDecision
 import com.hinnka.mycamera.appgallerypreview.AppGalleryPreviewSwipeOutcome
+import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
@@ -55,15 +57,18 @@ fun AppGalleryPreviewPagerHost(
     val density = LocalDensity.current.density
     var widthPx by remember { mutableIntStateOf(0) }
     val offset = remember { Animatable(0f) }
+    val scope = rememberCoroutineScope()
 
     // 序号变化（幻灯片/按钮翻页）时复位拖动残留。
     LaunchedEffect(index) {
         offset.snapTo(0f)
     }
 
+    // draggable 的 onDelta 是非 suspend 回调；snapTo 是 suspend，故在回调里 launch 到
+    // 组合作用域（Main 单线程，按 delta 顺序串行执行，Animatable 自身同步）。
     val draggableState = rememberDraggableState { delta ->
         val limit = widthPx.toFloat().coerceAtLeast(1f) * safe.swipeFollowFactor
-        offset.snapTo((offset.value + delta).coerceIn(-limit, limit))
+        scope.launch { offset.snapTo((offset.value + delta).coerceIn(-limit, limit)) }
     }
 
     Box(

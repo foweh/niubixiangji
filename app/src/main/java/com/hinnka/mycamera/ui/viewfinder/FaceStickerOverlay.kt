@@ -44,7 +44,10 @@ fun FaceStickerOverlay(
     externalImage: ImageBitmap? = null,
 ) {
     if (!config.enabled || placements.isEmpty()) return
-    val variant = resolved.definition.variant
+    val variant = when (resolved) {
+        is ResolvedSticker.BuiltIn -> resolved.definition.variant
+        is ResolvedSticker.External -> resolved.definition.variant
+    }
 
     Box(modifier = modifier.fillMaxSize()) {
         Canvas(modifier = Modifier.fillMaxSize()) {

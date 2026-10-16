@@ -67,7 +67,7 @@ object ViewfinderBgTasks {
                 PLog.w(TAG, "边缘检测任务结束于失败态：${job.state.value.message}")
             }
         },
-    ) { job ->
+    ) {
         val clamped = PeakingEnhanceConfig.clamp(config).value
         try {
             var workingLongEdge = WORK_LONG_EDGE_LADDER.first()
@@ -81,7 +81,7 @@ object ViewfinderBgTasks {
                 val candidateWidth = (width * scale).toInt().coerceAtLeast(3)
                 val candidateHeight = (height * scale).toInt().coerceAtLeast(3)
                 val requiredBytes = candidateWidth.toLong() * candidateHeight.toLong() * 4L * 3L
-                if (!job.guardMemory(requiredBytes)) continue
+                if (!guardMemory(requiredBytes)) continue
                 workingLongEdge = candidate
                 workingWidth = candidateWidth
                 workingHeight = candidateHeight
@@ -100,7 +100,7 @@ object ViewfinderBgTasks {
             // 避免分片接缝处出现假边缘（比整图驻留内存更省，同时保持结果连续）。
             val step = clamped.stepScale.toInt().coerceAtLeast(1)
             val magnitude = FloatArray(workingWidth * workingHeight)
-            val batchSize = job.batchSizeFor(workingHeight.coerceAtLeast(1))
+            val batchSize = batchSizeFor(workingHeight.coerceAtLeast(1))
             var rowStart = 0
             while (rowStart < workingHeight) {
                 val rowEnd = minOf(rowStart + batchSize, workingHeight)
@@ -130,8 +130,8 @@ object ViewfinderBgTasks {
                         )
                     }
                 }
-                job.checkYield()
-                job.report(rowEnd, workingHeight)
+                checkYield()
+                report(rowEnd, workingHeight)
                 rowStart = rowEnd
             }
 

@@ -113,19 +113,23 @@ class AppGallerySettingsStore private constructor(private val context: Context) 
     }
 
     suspend fun toggleFavorite(itemId: String, now: Long = System.currentTimeMillis()) {
-        updateAnnotations { AppGalleryAnnotationMachine.toggleFavorite(it, itemId, now, loadConfig()) }
+        val config = loadConfig()
+        updateAnnotations { AppGalleryAnnotationMachine.toggleFavorite(it, itemId, now, config) }
     }
 
     suspend fun setFavorite(itemId: String, favorite: Boolean, now: Long = System.currentTimeMillis()) {
-        updateAnnotations { AppGalleryAnnotationMachine.setFavorite(it, itemId, favorite, now, loadConfig()) }
+        val config = loadConfig()
+        updateAnnotations { AppGalleryAnnotationMachine.setFavorite(it, itemId, favorite, now, config) }
     }
 
     suspend fun cycleRating(itemId: String, now: Long = System.currentTimeMillis()) {
-        updateAnnotations { AppGalleryAnnotationMachine.cycleRating(it, itemId, now, loadConfig()) }
+        val config = loadConfig()
+        updateAnnotations { AppGalleryAnnotationMachine.cycleRating(it, itemId, now, config) }
     }
 
     suspend fun addTag(itemId: String, tag: String, now: Long = System.currentTimeMillis()) {
-        updateAnnotations { AppGalleryAnnotationMachine.addTag(it, itemId, tag, now, loadConfig()) }
+        val config = loadConfig()
+        updateAnnotations { AppGalleryAnnotationMachine.addTag(it, itemId, tag, now, config) }
     }
 
     suspend fun applyBatch(request: AppGalleryBatchRequest): Map<String, AppGalleryAnnotation> {

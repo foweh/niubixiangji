@@ -51,9 +51,10 @@ class AppGalleryTrashStore(
      */
     suspend fun moveToTrash(
         item: AppGalleryItem,
-        config: AppGalleryConfig = settings.loadConfig(),
+        config: AppGalleryConfig? = null,
         now: Long = System.currentTimeMillis(),
     ): AppGalleryTrashMoveResult = withContext(Dispatchers.IO) {
+        val effectiveConfig = config ?: settings.loadConfig()
         if (item.source == AppGalleryItemSource.SYSTEM_MEDIA_STORE) {
             return@withContext AppGalleryTrashMoveResult(
                 itemId = item.id,
@@ -61,7 +62,7 @@ class AppGalleryTrashStore(
                 reason = "系统相册条目不支持回收站，请在系统相册中删除",
             )
         }
-        val safeConfig = AppGalleryConfig.clamp(config)
+        val safeConfig = AppGalleryConfig.clamp(effectiveConfig)
         val photoDir = photoDirFor(item.id)
         if (!photoDir.exists() || !photoDir.isDirectory) {
             return@withContext AppGalleryTrashMoveResult(
@@ -117,11 +118,12 @@ class AppGalleryTrashStore(
      */
     suspend fun moveToTrash(
         items: List<AppGalleryItem>,
-        config: AppGalleryConfig = settings.loadConfig(),
+        config: AppGalleryConfig? = null,
         now: Long = System.currentTimeMillis(),
     ): List<AppGalleryTrashMoveResult> {
+        val resolved = config ?: settings.loadConfig()
         val out = ArrayList<AppGalleryTrashMoveResult>(items.size)
-        items.forEach { item -> out.add(moveToTrash(item, config, now)) }
+        items.forEach { item -> out.add(moveToTrash(item, resolved, now)) }
         return out
     }
 
@@ -178,9 +180,10 @@ class AppGalleryTrashStore(
      */
     suspend fun purgeExpired(
         now: Long = System.currentTimeMillis(),
-        config: AppGalleryConfig = settings.loadConfig(),
+        config: AppGalleryConfig? = null,
     ): Int = withContext(Dispatchers.IO) {
-        val plan = AppGalleryTrashRules.buildCleanupPlan(settings.loadTrash(), now, config)
+        val effectiveConfig = config ?: settings.loadConfig()
+        val plan = AppGalleryTrashRules.buildCleanupPlan(settings.loadTrash(), now, effectiveConfig)
         if (plan.isNoop) return@withContext 0
         val purgedIds = ArrayList<String>(plan.expired.size)
         plan.expired.forEach { entry ->

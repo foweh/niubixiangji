@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.runBlocking
 import java.util.concurrent.PriorityBlockingQueue
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
@@ -147,7 +148,7 @@ class BgJob internal constructor(
     val chunkSize: Int,
     val type: BgTaskType,
     val priority: Int,
-    internal val block: BgJob.() -> Unit,
+    internal val block: suspend BgJob.() -> Unit,
 ) {
     private val _state = MutableStateFlow(BgJobState())
     val state: StateFlow<BgJobState> = _state.asStateFlow()
@@ -201,6 +202,17 @@ class BgJob internal constructor(
         val t = total.coerceAtLeast(1)
         val p = done.coerceIn(0, t).toFloat() / t
         _state.value = _state.value.copy(progress = p)
+    }
+
+    /**
+     * 上报分阶段进度与文案（由 GIF/视频导出等任务调用：progress 为 0f..1f 的比例，
+     * message 为给界面展示的阶段说明）。与 [report] 互补，互不影响。
+     */
+    fun report(progress: Float, message: String) {
+        _state.value = _state.value.copy(
+            progress = progress.coerceIn(0f, 1f),
+            message = message,
+        )
     }
 
     /**
@@ -352,7 +364,7 @@ object BgJobRunner {
         type: BgTaskType = BgTaskType.GENERIC,
         priority: Int = BgJobPriority.NORMAL,
         onFinish: ((BgJob) -> Unit)? = null,
-        block: BgJob.() -> Unit,
+        block: suspend BgJob.() -> Unit,
     ): BgJob {
         // P2-9：chunkSize<=0（未显式传入）时按任务类型取默认批大小。
         val effectiveChunk = if (chunkSize <= 0) type.defaultMaxFrameBatch else chunkSize
@@ -379,7 +391,9 @@ object BgJobRunner {
                 continue
             }
             Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND)
-            runCatching { job.block.invoke(job) }
+            // block 为 suspend（任务体内部会调用 DataStore 等挂起函数），
+            // 在本后台线程上用 runBlocking 驱动；非 suspend 的既有调用点照常合法。
+            runCatching { runBlocking { job.block.invoke(job) } }
                 .onSuccess { job.markDone() }
                 .onFailure { e ->
                     if (e is BgJobCancelledException) {

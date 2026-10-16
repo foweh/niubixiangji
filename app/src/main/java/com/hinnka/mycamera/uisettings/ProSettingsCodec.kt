@@ -220,7 +220,7 @@ object ProSettingsCodec {
     fun settingOfKey(key: String): ProSettingSpec? =
         ProSettingsRegistry.settings.firstOrNull { isPersistable(it) && it.storageKey == key }
 
-    /** 某个模块声明的全部键（与 `delivery/patches/*_patch.md` 的 CONFIG 节对账用）。 */
+    /** 某个模块声明的全部键（与 delivery/patches 目录下 *_patch.md 的 CONFIG 节对账用）。 */
     fun keysOfModule(moduleId: String): List<String> =
         (ProSettingsRegistry.settingsOfModule[moduleId] ?: emptyList())
             .filter { isPersistable(it) }
